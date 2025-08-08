@@ -8,6 +8,9 @@
   <h1>GitMoni Verified Balances</h1>
   <pre id="balances"></pre>
 
+  <h2>Merkle Tree</h2>
+  <div id="merkle-tree" style="font-family: monospace; white-space: pre-wrap;"></div>
+
   <script>
     async function sha256(str) {
       const enc = new TextEncoder().encode(str);
@@ -45,7 +48,34 @@
       document.getElementById('balances').textContent = JSON.stringify(balances, null, 2);
     }
 
+    
     updateBalances();
+    renderMerkleTree();
+
+    async function renderMerkleTree() {
+      const txs = await fetch('data/txs.json').then(r => r.json());
+      const hashes = await Promise.all(txs.map(tx => sha256(JSON.stringify(tx))));
+      const levels = [hashes];
+
+      while (levels[0].length > 1) {
+        const prev = levels[0];
+        const next = [];
+        for (let i = 0; i < prev.length; i += 2) {
+          const left = prev[i];
+          const right = prev[i + 1] || left;
+          next.push(await sha256(left + right));
+        }
+        levels.unshift(next);
+      }
+
+      const treeDiv = document.getElementById('merkle-tree');
+      treeDiv.innerHTML = '';
+      levels.forEach((level, i) => {
+        treeDiv.innerHTML += `Level ${i} [${level.length} nodes]:\n` +
+          level.map(h => h.slice(0, 16) + '…').join('   ') + '\n\n';
+      });
+    }
+    
   </script>
 </body>
 </html>
