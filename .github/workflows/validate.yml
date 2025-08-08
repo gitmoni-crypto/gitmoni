@@ -1,0 +1,40 @@
+name: Validate & Rebuild State
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+
+      - name: Prevent forbidden file edits
+        run: |
+          FORBIDDEN=$(git diff --name-only origin/main | grep -E '^(balances\.json|join_map\.json|stats\.json)$' || true)
+          if [ -n "$FORBIDDEN" ]; then
+            echo "❌ Forbidden files changed:"
+            echo "$FORBIDDEN"
+            exit 1
+          fi
+
+      - name: Validate transactions
+        run: php php/validate_chain.php
+
+      - name: Refresh aggregate state
+        run: php php/refresh_aggregates.php
+
+      - name: Commit aggregate updates
+        run: |
+          git config user.name "GitMoni Bot"
+          git config user.email "bot@gitmoni.com"
+          git add balances.json join_map.json
+          git commit -m "🔄 Update aggregates from latest transaction state" || echo "No changes"
+          git push

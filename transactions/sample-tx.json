@@ -1,0 +1,18 @@
+[
+  {
+    "inputs": [
+      {
+        "from": "user1-address",
+        "amount": 100,
+        "public_key": "-----BEGIN PUBLIC KEY-----\\nEXAMPLEKEY==\\n-----END PUBLIC KEY-----",
+        "signature": "FAKESIGBASE64=="
+      }
+    ],
+    "outputs": [
+      {
+        "to": "user2-address",
+        "amount": 100
+      }
+    ]
+  }
+]
