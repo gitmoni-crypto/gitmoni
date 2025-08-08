@@ -1,12 +1,1 @@
-function sha256(msg) {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(msg);
-  return require('crypto').createHash('sha256').update(data).digest();
-}
-
-if (typeof window !== 'undefined') {
-  window.sha256 = function (msg) {
-    const utf8 = new TextEncoder().encode(msg);
-    return elliptic.utils.sha256(utf8);
-  };
-}
+async function sha256HexBrowser(message){const enc=new TextEncoder().encode(message);const digest=await crypto.subtle.digest('SHA-256',enc);return Array.from(new Uint8Array(digest)).map(b=>b.toString(16).padStart(2,'0')).join('');} if(typeof window!=='undefined'){window.sha256HexBrowser=sha256HexBrowser;}

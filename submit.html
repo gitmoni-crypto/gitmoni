@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>Submit Transaction</title><link rel="stylesheet" href="styles.css"></head>
+<body>
+<h1>Submit Signed Transaction to GitMoni</h1>
+<p>Paste your full signed transaction JSON below:</p>
+<textarea id="tx" rows="10" cols="80" placeholder='{"from":"...", "to":"...", "amount":123, "pubkey":"...", "sig":"..."}'></textarea><br>
+<input type="text" id="txid" placeholder="Optional: tx-id filename (default is timestamp)"><br><br>
+<button onclick="generatePR()">Create GitHub PR Link</button>
+<p>🔗 <a id="pr-link" href="#" target="_blank"></a></p>
+<script>
+function generatePR(){const tx=document.getElementById('tx').value.trim();if(!tx){alert('Please paste a signed transaction first.');return;}const id=document.getElementById('txid').value.trim()||Date.now();const file=`data/pending/tx-${id}.json`;const encoded=encodeURIComponent(tx);const url=`https://github.com/gitmoni/gitmoni/new/main?filename=${file}&value=${encoded}`;const link=document.getElementById('pr-link');link.href=url;link.textContent='Open GitHub to submit transaction';}
+</script>
+</body></html>

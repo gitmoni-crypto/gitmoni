@@ -1,2 +1,5 @@
 # GitMoni
-Crypto validation and keygen project using GitHub Pages and Node.js.
+- Browser wallet (keygen + signer)
+- Explorer with Merkle levels + proof-verified balances
+- Submit UI (PR link)
+- Node validators + GitHub Actions

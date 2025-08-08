@@ -1,81 +1,14 @@
 <!DOCTYPE html>
-<html>
-<head>
-  <title>GitMoni Explorer</title>
-  <link rel="stylesheet" href="styles.css">
-</head>
+<html><head><meta charset="utf-8"><title>GitMoni Explorer</title><link rel="stylesheet" href="styles.css"></head>
 <body>
-  <h1>GitMoni Verified Balances</h1>
-  <pre id="balances"></pre>
-
-  <h2>Merkle Tree</h2>
-  <div id="merkle-tree" style="font-family: monospace; white-space: pre-wrap;"></div>
-
-  <script>
-    async function sha256(str) {
-      const enc = new TextEncoder().encode(str);
-      const hash = await crypto.subtle.digest('SHA-256', enc);
-      return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
-    }
-
-    async function verifyProof(leaf, proof, root) {
-      let hash = leaf;
-      for (const step of proof) {
-        hash = step.direction === 'left'
-          ? await sha256(step.hash + hash)
-          : await sha256(hash + step.hash);
-      }
-      return hash === root;
-    }
-
-    async function updateBalances() {
-      const balances = await fetch('data/balances.json').then(r => r.json());
-      const txs = await fetch('data/txs.json').then(r => r.json());
-      const proofs = await fetch('data/proofs.json').then(r => r.json());
-      const merkleRoot = await fetch('merkle-root.txt').then(r => r.text());
-
-      for (let i = 0; i < txs.length; i++) {
-        const tx = txs[i];
-        const leaf = await sha256(JSON.stringify(tx));
-        const proof = proofs[i];
-
-        if (await verifyProof(leaf, proof, merkleRoot.trim())) {
-          balances[tx.from] = (balances[tx.from] || 0) - tx.amount;
-          balances[tx.to] = (balances[tx.to] || 0) + tx.amount;
-        }
-      }
-
-      document.getElementById('balances').textContent = JSON.stringify(balances, null, 2);
-    }
-
-    
-    updateBalances();
-    renderMerkleTree();
-
-    async function renderMerkleTree() {
-      const txs = await fetch('data/txs.json').then(r => r.json());
-      const hashes = await Promise.all(txs.map(tx => sha256(JSON.stringify(tx))));
-      const levels = [hashes];
-
-      while (levels[0].length > 1) {
-        const prev = levels[0];
-        const next = [];
-        for (let i = 0; i < prev.length; i += 2) {
-          const left = prev[i];
-          const right = prev[i + 1] || left;
-          next.push(await sha256(left + right));
-        }
-        levels.unshift(next);
-      }
-
-      const treeDiv = document.getElementById('merkle-tree');
-      treeDiv.innerHTML = '';
-      levels.forEach((level, i) => {
-        treeDiv.innerHTML += `Level ${i} [${level.length} nodes]:\n` +
-          level.map(h => h.slice(0, 16) + '…').join('   ') + '\n\n';
-      });
-    }
-    
-  </script>
-</body>
-</html>
+<h1>GitMoni Verified Balances</h1>
+<pre id="balances"></pre>
+<h2>Merkle Tree</h2><div id="merkle-tree" style="font-family: monospace; white-space: pre-wrap;"></div>
+<script>
+async function sha256(s){const e=new TextEncoder().encode(s);const h=await crypto.subtle.digest('SHA-256',e);return Array.from(new Uint8Array(h)).map(b=>b.toString(16).padStart(2,'0')).join('');}
+async function verifyProof(leaf,proof,root){let hash=leaf;for(const step of proof){hash=step.direction==='left'?await sha256(step.hash+hash):await sha256(hash+step.hash);}return hash===root;}
+async function updateBalances(){const balances=await fetch('data/balances.json').then(r=>r.json());const txs=await fetch('data/txs.json').then(r=>r.json());const proofs=await fetch('data/proofs.json').then(r=>r.json());const merkleRoot=(await fetch('merkle-root.txt').then(r=>r.text())).trim();for(let i=0;i<txs.length;i++){const tx=txs[i];const leaf=await sha256(JSON.stringify(tx));const proof=proofs[i]||[];if(await verifyProof(leaf,proof,merkleRoot)){balances[tx.from]=(balances[tx.from]||0)-tx.amount;balances[tx.to]=(balances[tx.to]||0)+tx.amount;}}document.getElementById('balances').textContent=JSON.stringify(balances,null,2);}
+async function renderMerkleTree(){const txs=await fetch('data/txs.json').then(r=>r.json());const hashes=await Promise.all(txs.map(tx=>sha256(JSON.stringify(tx))));const levels=[hashes];while(levels[0].length>1){const prev=levels[0];const next=[];for(let i=0;i<prev.length;i+=2){const left=prev[i];const right=prev[i+1]||left;next.push(await sha256(left+right));}levels.unshift(next);}const treeDiv=document.getElementById('merkle-tree');treeDiv.innerHTML='';levels.forEach((level,i)=>{treeDiv.innerHTML+=`Level ${i} [${level.length} nodes]:\n`+level.map(h=>h.slice(0,16)+'…').join('   ')+'\n\n';});}
+updateBalances();renderMerkleTree();
+</script>
+</body></html>
