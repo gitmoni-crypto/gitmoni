@@ -5,9 +5,24 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-  <h1>GitMoni Key Generator</h1>
+  <h1>GitMoni Wallet</h1>
+
+  <h2>Key Generator</h2>
   <button onclick="generateKeys()">Generate Keys</button>
-  <pre id="output"></pre>
+  <pre id="key-output"></pre>
+
+  <h2>Sign a Transaction</h2>
+  <form onsubmit="signTransaction(event)">
+    <label>From: <input type="text" id="from" required></label><br>
+    <label>To: <input type="text" id="to" required></label><br>
+    <label>Amount: <input type="number" id="amount" required></label><br>
+    <button type="submit">Sign Transaction</button>
+  </form>
+
+  <h3>Signed Transaction</h3>
+  <pre id="signed-output"></pre>
+
+  <script src="https://cdn.jsdelivr.net/npm/elliptic@6.5.4/dist/elliptic.min.js"></script>
   <script src="utils/crypto.js"></script>
   <script src="keys/keygen.js"></script>
 </body>
