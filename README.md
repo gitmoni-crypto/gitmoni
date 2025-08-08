@@ -1,2 +1,2 @@
 # GitMoni
-A Git-based cryptocurrency with deterministic, validated commits.
+A crypto validation + explorer system using GitHub and JavaScript.

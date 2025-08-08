@@ -1,0 +1,12 @@
+{
+  "name": "gitmoni",
+  "version": "1.0.0",
+  "description": "GitMoni validation project",
+  "main": "validate-tx.js",
+  "scripts": {
+    "validate": "node validate-tx.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT"
+}
