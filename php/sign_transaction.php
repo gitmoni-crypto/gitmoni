@@ -1,5 +1,4 @@
 <?php
-// Signs a transaction using a private key
 $txFile = $argv[1] ?? null;
 $privKeyFile = $argv[2] ?? null;
 if (!$txFile || !$privKeyFile) {

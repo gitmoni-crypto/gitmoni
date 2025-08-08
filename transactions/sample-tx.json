@@ -2,15 +2,15 @@
   {
     "inputs": [
       {
-        "from": "user1-address-placeholder",
+        "from": "user1-address",
         "amount": 100,
-        "public_key": "-----BEGIN PUBLIC KEY-----\\nFAKEKEYFORDEMO==\\n-----END PUBLIC KEY-----",
-        "signature": "FAKESIGNATUREBASE64=="
+        "public_key": "-----BEGIN PUBLIC KEY-----\\nEXAMPLEKEY==\\n-----END PUBLIC KEY-----",
+        "signature": "FAKESIGBASE64=="
       }
     ],
     "outputs": [
       {
-        "to": "user2-address-placeholder",
+        "to": "user2-address",
         "amount": 100
       }
     ]

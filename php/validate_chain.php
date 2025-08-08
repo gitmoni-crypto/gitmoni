@@ -1,7 +1,6 @@
 <?php
-$balances = json_decode(file_get_contents("balances.json"), true);
+$balances = [];
 $txFiles = glob("transactions/*.json");
-
 foreach ($txFiles as $file) {
     $txs = json_decode(file_get_contents($file), true);
     foreach ($txs as $tx) {
@@ -10,33 +9,20 @@ foreach ($txFiles as $file) {
             $sig = base64_decode($input['signature']);
             $pubkey = $input['public_key'];
             $amount = $input['amount'];
-
-            if (!isset($balances[$from]) || $balances[$from] < $amount) {
-                echo "❌ Insufficient funds for $from in $file\n";
-                exit(1);
-            }
-
             $derivedAddress = substr(sha1($pubkey), 0, 40);
             if ($derivedAddress !== $from) {
-                echo "❌ Public key does not match 'from' address in $file\n";
+                echo "❌ Public key mismatch for $from in $file\n";
                 exit(1);
             }
-
-            $txCopy = $tx;
-            foreach ($txCopy['inputs'] as &$in) {
-                unset($in['signature']);
-            }
-            $data = json_encode($txCopy);
-
-            $verified = openssl_verify($data, $sig, $pubkey, OPENSSL_ALGO_SHA256);
-            if (!$verified) {
+            $copy = $tx;
+            foreach ($copy['inputs'] as &$i) unset($i['signature']);
+            $data = json_encode($copy);
+            if (!openssl_verify($data, $sig, $pubkey, OPENSSL_ALGO_SHA256)) {
                 echo "❌ Invalid signature for $from in $file\n";
                 exit(1);
             }
-
-            $balances[$from] -= $amount;
+            $balances[$from] = ($balances[$from] ?? 0) - $amount;
         }
-
         foreach ($tx['outputs'] as $output) {
             $to = $output['to'];
             $amount = $output['amount'];
@@ -44,4 +30,4 @@ foreach ($txFiles as $file) {
         }
     }
 }
-echo "✅ All transactions are valid!\n";
+echo "✅ All transactions valid\n";
