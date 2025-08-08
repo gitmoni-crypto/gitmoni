@@ -7,6 +7,15 @@
 <body>
   <h1>Transaction Explorer</h1>
   <pre id="balances"></pre>
+
+  <h2>Verify Merkle Proof</h2>
+  <textarea id="tx" rows="4" cols="60" placeholder='Paste full JSON tx'></textarea><br>
+  <textarea id="proof" rows="4" cols="60" placeholder='Paste Merkle proof JSON'></textarea><br>
+  <input type="text" id="root" placeholder="Merkle root hash"><br>
+  <button onclick="verifyProofUI()">Verify Proof</button>
+  <pre id="result"></pre>
+
+  <script src="https://cdn.jsdelivr.net/npm/elliptic@6.5.4/dist/elliptic.min.js"></script>
   <script src="utils/crypto.js"></script>
   <script>
     fetch('data/balances.json')
@@ -14,6 +23,31 @@
       .then(data => {
         document.getElementById('balances').textContent = JSON.stringify(data, null, 2);
       });
+
+    async function sha256(str) {
+      const enc = new TextEncoder().encode(str);
+      const hash = await crypto.subtle.digest('SHA-256', enc);
+      return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+
+    async function verifyProofUI() {
+      const tx = JSON.parse(document.getElementById('tx').value);
+      const proof = JSON.parse(document.getElementById('proof').value);
+      const root = document.getElementById('root').value;
+      const leaf = await sha256(JSON.stringify(tx));
+
+      let hash = leaf;
+      for (const step of proof) {
+        hash = step.direction === 'left'
+          ? await sha256(step.hash + hash)
+          : await sha256(hash + step.hash);
+      }
+
+      const isValid = hash === root;
+      document.getElementById('result').textContent = isValid
+        ? '✅ Valid Merkle proof!'
+        : '❌ Invalid proof.';
+    }
   </script>
 </body>
 </html>
