@@ -1,6 +1,5 @@
 <?php
 $balances = json_decode(file_get_contents("balances.json"), true);
-$pubkeys = json_decode(file_get_contents("public_keys.json"), true);
 $txFiles = glob("transactions/*.json");
 
 foreach ($txFiles as $file) {
@@ -9,6 +8,7 @@ foreach ($txFiles as $file) {
         foreach ($tx['inputs'] as $input) {
             $from = $input['from'];
             $sig = base64_decode($input['signature']);
+            $pubkey = $input['public_key'];
             $amount = $input['amount'];
 
             if (!isset($balances[$from]) || $balances[$from] < $amount) {
@@ -16,14 +16,16 @@ foreach ($txFiles as $file) {
                 exit(1);
             }
 
-            $pubkey = $pubkeys[$from] ?? null;
-            if (!$pubkey) {
-                echo "❌ No public key for $from\n";
+            $derivedAddress = substr(sha1($pubkey), 0, 40);
+            if ($derivedAddress !== $from) {
+                echo "❌ Public key does not match 'from' address in $file\n";
                 exit(1);
             }
 
             $txCopy = $tx;
-            unset($txCopy['inputs'][0]['signature']);
+            foreach ($txCopy['inputs'] as &$in) {
+                unset($in['signature']);
+            }
             $data = json_encode($txCopy);
 
             $verified = openssl_verify($data, $sig, $pubkey, OPENSSL_ALGO_SHA256);

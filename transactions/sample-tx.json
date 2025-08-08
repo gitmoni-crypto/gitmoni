@@ -1,0 +1,18 @@
+[
+  {
+    "inputs": [
+      {
+        "from": "user1-address-placeholder",
+        "amount": 100,
+        "public_key": "-----BEGIN PUBLIC KEY-----\\nFAKEKEYFORDEMO==\\n-----END PUBLIC KEY-----",
+        "signature": "FAKESIGNATUREBASE64=="
+      }
+    ],
+    "outputs": [
+      {
+        "to": "user2-address-placeholder",
+        "amount": 100
+      }
+    ]
+  }
+]

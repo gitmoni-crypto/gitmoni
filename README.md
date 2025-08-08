@@ -1,2 +1,2 @@
 # GitMoni
-A Git-based cryptocurrency ledger with Bitcoin-style validation.
+A Git-based cryptocurrency ledger using Bitcoin-style validation.
