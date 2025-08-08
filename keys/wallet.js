@@ -1,2 +1,1 @@
-// Wallet utilities for GitMoni
-console.log('Wallet loaded');
+// Placeholder for wallet loading/signing

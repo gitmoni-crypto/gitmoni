@@ -1,8 +1,19 @@
 <!DOCTYPE html>
 <html>
-<head><title>GitMoni Explorer</title><link rel='stylesheet' href='styles.css'></head>
+<head>
+  <title>GitMoni Explorer</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
 <body>
-<h1>Explorer</h1>
-<script src='keys/wallet.js'></script>
+  <h1>Transaction Explorer</h1>
+  <pre id="balances"></pre>
+  <script src="utils/crypto.js"></script>
+  <script>
+    fetch('data/balances.json')
+      .then(res => res.json())
+      .then(data => {
+        document.getElementById('balances').textContent = JSON.stringify(data, null, 2);
+      });
+  </script>
 </body>
 </html>

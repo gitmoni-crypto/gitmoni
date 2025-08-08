@@ -1,8 +1,14 @@
 <!DOCTYPE html>
 <html>
-<head><title>GitMoni</title><link rel='stylesheet' href='styles.css'></head>
+<head>
+  <title>GitMoni</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
 <body>
-<h1>GitMoni Key Generator</h1>
-<script src='keys/keygen.js'></script>
+  <h1>GitMoni Key Generator</h1>
+  <button onclick="generateKeys()">Generate Keys</button>
+  <pre id="output"></pre>
+  <script src="utils/crypto.js"></script>
+  <script src="keys/keygen.js"></script>
 </body>
 </html>

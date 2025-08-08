@@ -1,2 +1,2 @@
 # GitMoni
-A crypto validation + explorer system using GitHub and JavaScript.
+Crypto validation and keygen project using GitHub Pages and Node.js.

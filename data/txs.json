@@ -1,3 +1,4 @@
 [
-  {"from": "user1", "to": "user2", "amount": 1000}
+  { "from": "user1", "to": "user2", "amount": 1000 },
+  { "from": "user1", "to": "user3", "amount": 250 }
 ]
