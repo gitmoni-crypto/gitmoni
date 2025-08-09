@@ -4,7 +4,12 @@
   "private": true,
   "description": "GitMoni validation + pages",
   "main": "validate-tx.js",
-  "scripts": { "validate": "node validate-tx.js", "merkle": "node merkle-tree.js" },
+  "scripts": {
+    "validate": "node validate-tx.js",
+    "merkle": "node merkle-tree.js"
+  },
   "license": "MIT",
-  "dependencies": { "elliptic": "^6.5.4" }
+  "dependencies": {
+    "elliptic": "^6.6.1"
+  }
 }
