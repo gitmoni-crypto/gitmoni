@@ -1,11 +1,13 @@
-// keys/keygen.js
-import elliptic from "elliptic";
+// keys.js
+if (typeof elliptic === "undefined") {
+  throw new Error("elliptic not loaded. Load CDN before keys.js");
+}
 const EC = elliptic.ec;
 const ec = new EC("secp256k1");
 
 let keyPair;
 
-// SHA-256 → hex using Web Crypto
+// Web Crypto SHA-256 → hex
 async function sha256hex(str) {
   const data = new TextEncoder().encode(str);
   const buf = await crypto.subtle.digest("SHA-256", data);
@@ -24,7 +26,6 @@ function generateKeys() {
   keyPair = ec.genKeyPair();
   const priv = keyPair.getPrivate("hex");
   const pub = keyPair.getPublic(true, "hex");
-  // derive address asynchronously and then render
   pubkeyToAddress(pub).then(addr => {
     document.getElementById("key-output").textContent =
       `Private Key:\n${priv}\n\nPublic Key:\n${pub}\n\nDerived Address:\n${addr}`;
@@ -33,15 +34,12 @@ function generateKeys() {
 
 async function signTransaction(e) {
   e.preventDefault();
-  if (!keyPair) {
-    alert("Generate keys first!");
-    return;
-  }
+  if (!keyPair) return alert("Generate keys first!");
+
   const to = document.getElementById("to").value;
   const amount = parseFloat(document.getElementById("amount").value);
   const pubkey = keyPair.getPublic(true, "hex");
   const from = await pubkeyToAddress(pubkey);
-
   const message = `${from}->${to}:${amount}`;
   const hashHex = await sha256hex(message);
 
@@ -51,3 +49,7 @@ async function signTransaction(e) {
   const tx = { from, to, amount, pubkey, sig: derSig };
   document.getElementById("signed-output").textContent = JSON.stringify(tx, null, 2);
 }
+
+// (optional) expose for inline onclick handlers
+window.generateKeys = generateKeys;
+window.signTransaction = signTransaction;
