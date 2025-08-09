@@ -1,0 +1,5 @@
+# Require review by admins for sensitive paths
+/data/            @gitmoni-crypto
+/utils/           @gitmoni-crypto
+/validate-tx.js   @gitmoni-crypto
+/.github/workflows/ @gitmoni-crypto
