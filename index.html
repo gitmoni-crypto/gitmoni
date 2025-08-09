@@ -10,14 +10,16 @@
 <button type="submit">Sign Transaction</button>
 </form>
 <h3>Signed Transaction</h3><pre id="signed-output"></pre></section>
-<!-- Load elliptic library first -->
-<!-- load before your script -->
+<!-- 1) Load elliptic UMD first -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/elliptic/6.5.4/elliptic.min.js"
-        integrity="sha512-0bL3l9n9bq8rVw4nT0ZkqjzYt8mUe4uAkq+J0Fh0yYFQ7LkYkD9oL7H1i6cKp4c6w5a4hJYw3gZp6g9k3eyyXw=="
         crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-<script src="utils/crypto.js"></script>
-<!-- Use ES modules and import elliptic directly from esm.sh -->
-<script type="module" src="keys.js?v=6"></script>
+
+<!-- 2) (Optional) your utils if you actually use it -->
+<!-- <script src="utils/crypto.js?v=1"></script> -->
+
+<!-- 3) Then your keygen script — NOTE: no type="module" -->
+<script src="keys/keygen.js?v=7"></script>
+
 
 
 </body></html>
