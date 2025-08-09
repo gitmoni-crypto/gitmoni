@@ -7,7 +7,33 @@
 <input type="text" id="txid" placeholder="Optional: tx-id filename (default is timestamp)"><br><br>
 <button onclick="generatePR()">Create GitHub PR Link</button>
 <p>🔗 <a id="pr-link" href="#" target="_blank"></a></p>
+
 <script>
-function generatePR(){const tx=document.getElementById('tx').value.trim();if(!tx){alert('Please paste a signed transaction first.');return;}const id=document.getElementById('txid').value.trim()||Date.now();const file=`data/pending/tx-${id}.json`;const encoded=encodeURIComponent(tx);const url=`https://github.com/gitmoni/gitmoni/new/main?filename=${file}&value=${encoded}`;const link=document.getElementById('pr-link');link.href=url;link.textContent='Open GitHub to submit transaction';}
+  const GH_OWNER  = 'gitmoni';   // change if needed
+  const GH_REPO   = 'gitmoni';   // change if needed
+  const GH_BRANCH = 'main';      // target branch for PR
+
+  function generatePR() {
+    const tx = document.getElementById('tx').value.trim();
+    if (!tx) return alert('Please paste a signed transaction first.');
+
+    const id   = document.getElementById('txid').value.trim() || Date.now();
+    const file = `data/pending/tx-${id}.json`;
+
+    // optional: basic JSON sanity check before sending user to GitHub
+    try { JSON.parse(tx); } catch (e) {
+      return alert('Invalid JSON. Fix and try again.');
+    }
+
+    // Create “new file” link on the main branch; GitHub will guide user to make a PR
+    const base = `https://github.com/${GH_OWNER}/${GH_REPO}/new/${GH_BRANCH}`;
+    const url  = `${base}?filename=${encodeURIComponent(file)}&value=${encodeURIComponent(tx)}&message=${encodeURIComponent('Add pending tx: '+file)}`;
+
+    const link = document.getElementById('pr-link');
+    link.href = url;
+    link.textContent = "Open GitHub to submit transaction";
+  }
 </script>
+
+
 </body></html>
