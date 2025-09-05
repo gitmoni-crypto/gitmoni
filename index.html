@@ -5,71 +5,101 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>GitMoni</title>
   <link rel="stylesheet" href="styles.css" />
+  <style>
+    /* Extra styles for homepage additions */
+    .home-section { margin: 20px 0; }
+    .home-section h2 { margin-top: 0; }
+    .pill-link {
+      display: inline-block;
+      background: var(--card);
+      border: 1px solid var(--accent);
+      border-radius: 999px;
+      padding: 6px 12px;
+      margin: 4px 6px 12px 0;
+      text-decoration: none;
+      color: var(--fg);
+      font-size: 13px;
+    }
+    .pill-link:hover { background: var(--accent); color: #fff; }
+  </style>
 </head>
 <body>
   <header>
     <h1>🌐 GitMoni</h1>
-    <p>A crypto-inspired experiment built entirely on GitHub.</p>
+    <span class="muted">A GitHub-native experiment in social currency</span>
   </header>
 
-  <nav>
-    <a class="btn" href="explorer.html">Explorer</a>
-    <a class="btn" href="submit.html">Submit Transaction</a>
-    <a class="btn" href="https://github.com/gitmoni-crypto/gitmoni" target="_blank">GitHub Repo</a>
-  </nav>
+  <main class="grid">
+    <div class="card span-12 home-section">
+      <h2>💸 What is MONI?</h2>
+      <p>MONI is a mock currency granted once per GitHub user when they star the <a href="https://github.com/gitmoni-crypto/gitmoni" target="_blank">GitMoni repo</a>. The reward decreases with rank (1/n decay), incentivizing early adoption and capping total supply.</p>
+      <p>Each user gets: <code>G1 / rank</code> where <code>G1 = 1,618,033,989</code> (golden mean × 10<sup>9</sup>).</p>
+    </div>
 
-  <main>
-    <section>
-      <h2>What is MONI?</h2>
-      <p>
-        MONI is a community currency distributed through GitHub stars ⭐.
-        Starring the GitMoni repo earns a one-time faucet grant of MONI, with
-        earlier stargazers receiving more.
-      </p>
-    </section>
+    <div class="card span-6 home-section">
+      <h2>🪙 Your Balance</h2>
+      <div class="row">
+        <input id="ghuser" class="mono" placeholder="GitHub username" size="20" />
+        <button id="check" class="btn">Check</button>
+      </div>
+      <div class="row small">
+        <span class="pill" id="addr">addr: —</span>
+        <span class="pill" id="bal">balance: —</span>
+        <a id="toExplorer" class="pill-link" href="explorer.html">Explorer →</a>
+      </div>
+    </div>
 
-    <section>
-      <h2>How distribution works</h2>
+    <div class="card span-6 home-section">
+      <h2>🧾 Quick Links</h2>
+      <a class="pill-link" href="explorer.html">🔍 Explorer</a>
+      <a class="pill-link" href="submit.html">✍️ Submit TX</a>
+      <a class="pill-link" href="https://github.com/gitmoni-crypto/gitmoni" target="_blank">📦 GitHub Repo</a>
+      <a class="pill-link" href="data/balances.json" target="_blank">💰 balances.json</a>
+    </div>
+
+    <div class="card span-12 home-section">
+      <h2>📚 How It Works</h2>
       <ul>
-        <li>The <strong>first stargazer</strong> receives exactly <code>1_618_033_989</code> MONI (the golden ratio × 1 billion).</li>
-        <li>The <strong>n-th stargazer</strong> receives <code>1_618_033_989 / n</code>.</li>
-        <li>This harmonic decay rewards early adopters while naturally capping total supply.</li>
-        <li>MONI is not a real cryptocurrency — it's an experiment in social distribution and transparent tracking on GitHub.</li>
+        <li>MONI grants are triggered by GitHub stars — one per user, automatically recorded as a TX.</li>
+        <li>All TXs are JSON files in the <code>transactions</code> branch. Merges are validated via GitHub Actions.</li>
+        <li>Only the GitHub user matching the <code>from</code> address may submit a transaction from it.</li>
+        <li>Indexes are rebuilt every 10 minutes and published to GitHub Pages.</li>
       </ul>
-    </section>
-
-    <section>
-      <h2>The Ledger</h2>
-      <p>
-        Every MONI transaction is stored as a JSON file in the
-        <code>transactions</code> branch of the GitHub repo.
-      </p>
-      <p>
-        GitHub Actions validate each pull request. The sender (<code>from</code>)
-        must match the GitHub user who submitted it. This links identity and wallet.
-      </p>
-      <p>
-        The Explorer builds indexes like <code>balances.json</code> and
-        <code>txmeta.json</code> for fast lookups.
-      </p>
-    </section>
-
-    <section>
-      <h2>Get Started</h2>
-      <ol>
-        <li>⭐ Star the <a href="https://github.com/gitmoni-crypto/gitmoni" target="_blank">GitMoni repo</a>.</li>
-        <li>Wait a few minutes for the faucet to detect your star and mint your grant.</li>
-        <li>Check your balance in the <a href="explorer.html">Explorer</a>.</li>
-        <li>Send a transaction by submitting a PR to the repo or using <a href="submit.html">Submit Transaction</a>.</li>
-      </ol>
-    </section>
+    </div>
   </main>
 
-  <footer>
-    <p>
-      Built with ❤️ on GitHub Pages.  
-      Source: <a href="https://github.com/gitmoni-crypto/gitmoni">gitmoni-crypto/gitmoni</a>
-    </p>
+  <footer style="text-align:center; padding:16px; font-size:12px; color:var(--muted);">
+    GitMoni — Powered by GitHub. All transactions are public and auditable.
   </footer>
+
+  <script type="module">
+    const $ = s => document.querySelector(s);
+    const addrOf = u => `gh:${(u || '').trim()}`;
+    const fmt = n => (n ?? 0).toLocaleString(undefined, { maximumFractionDigits: 8 });
+    let BAL = null;
+
+    async function loadBalances() {
+      if (BAL) return BAL;
+      try {
+        const r = await fetch('data/balances.json', { cache: 'no-store' });
+        BAL = await r.json();
+      } catch {
+        BAL = {};
+      }
+      return BAL;
+    }
+
+    async function checkBalance() {
+      const u = $('#ghuser').value.trim();
+      const a = addrOf(u);
+      $('#addr').textContent = `addr: ${a || '—'}`;
+      $('#toExplorer').href = u ? `explorer.html?addr=${encodeURIComponent(a)}` : 'explorer.html';
+      const b = await loadBalances();
+      $('#bal').textContent = `balance: ${fmt(b[a] || 0)}`;
+    }
+
+    $('#check').addEventListener('click', checkBalance);
+    $('#ghuser').addEventListener('keydown', e => { if (e.key === 'Enter') checkBalance(); });
+  </script>
 </body>
 </html>
