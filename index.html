@@ -1,69 +1,74 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>GitMoni — Wallet & Explorer</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <link rel="canonical" href="https://gitmoni.com/">
-  <style>
-    :root { --bg:#0b0f14; --fg:#e6edf3; --muted:#9aa6b2; --card:#0e1621; --accent:#4aa3ff; }
-    *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto}
-    header{padding:20px 16px;border-bottom:1px solid #13202e;display:flex;gap:10px;align-items:center}
-    h1{font-size:18px;margin:0} .muted{color:var(--muted)}
-    main{max-width:900px;margin:28px auto;padding:0 16px 40px}
-    .card{background:var(--card);border:1px solid #13202e;border-radius:12px;padding:18px;margin-bottom:14px}
-    .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
-    a.button{display:inline-block;padding:10px 14px;border-radius:10px;border:1px solid #203a51;background:#0f2744;color:var(--fg);text-decoration:none}
-    a.button:hover{background:#123051}
-    .mono{font-family:ui-monospace,Menlo,Consolas,monospace}
-    ul{margin:8px 0 0 20px}
-    .pill{display:inline-block;padding:2px 8px;border:1px solid #203a51;border-radius:999px;background:#0a2036;margin-right:6px}
-    footer{opacity:.7;font-size:12px;margin-top:18px}
-  </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GitMoni</title>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
   <header>
-    <h1>GitMoni</h1>
-    <span class="muted">Minimal wallet • On-chain-like validation • Static hosting</span>
+    <h1>🌐 GitMoni</h1>
+    <p>A crypto-inspired experiment built entirely on GitHub.</p>
   </header>
 
+  <nav>
+    <a class="btn" href="explorer.html">Explorer</a>
+    <a class="btn" href="submit.html">Submit Transaction</a>
+    <a class="btn" href="https://github.com/gitmoni-crypto/gitmoni" target="_blank">GitHub Repo</a>
+  </nav>
+
   <main>
-    <div class="card">
-      <h2 style="margin:0 0 6px">Quick Links</h2>
-      <div class="row" style="margin-top:8px">
-        <a class="button" href="./explorer.html">🔎 Open Explorer</a>
-        <a class="button" href="./submit.html">✍️ Submit / Sign TX</a>
-        <a class="button" href="./TX_FORMAT.md">📄 TX Format</a>
-        <a class="button" href="./README.md">📘 README</a>
-      </div>
-      <div style="margin-top:10px">
-        <span class="pill mono">/data/txs/*.json</span>
-        <span class="pill mono">/data/index.json</span>
-        <span class="pill mono">/data/balances.json</span>
-        <span class="pill mono">/data/index/by-date/*.json</span>
-      </div>
-    </div>
+    <section>
+      <h2>What is MONI?</h2>
+      <p>
+        MONI is a community currency distributed through GitHub stars ⭐. 
+        Each GitHub account can star the repository once, and receives a 
+        one-time faucet grant of MONI.
+      </p>
+    </section>
 
-    <div class="card">
-      <h3 style="margin:0 0 6px">What is GitMoni?</h3>
-      <p>Git-backed, crypto-inspired ledger with browser-side verification. No servers, no DB — just static files on GitHub Pages.</p>
+    <section>
+      <h2>How distribution works</h2>
       <ul>
-        <li><strong>Wallet:</strong> generate keys & sign in-browser.</li>
-        <li><strong>Validation:</strong> verify inputs/outputs and signatures client-side.</li>
-        <li><strong>Indexes:</strong> O(1) lookups via <span class="mono">index.json</span> (+ optional date shards).</li>
+        <li>The <strong>1st stargazer</strong> receives ~1.6 billion MONI.</li>
+        <li>The <strong>n-th stargazer</strong> receives <code>g1 / n</code>, so
+          #10 gets 1/10th of the first grant, #100 gets 1/100th, and so on.</li>
+        <li>This “harmonic decay” rewards early adopters while capping total free supply at ~40 billion MONI even if billions of accounts starred.</li>
+        <li>After the faucet grant, users can only earn MONI by receiving transfers in the ledger.</li>
       </ul>
-    </div>
+    </section>
 
-    <div class="card">
-      <h3 style="margin:0 0 6px">How to Publish New TXs</h3>
-      <ol style="margin:6px 0 0 18px">
-        <li>Add a TX file: <span class="mono">data/txs/&lt;txid&gt;.json</span></li>
-        <li>Run locally: <span class="mono">npm run build:index</span> (and optionally <span class="mono">npm run build:dates</span>)</li>
-        <li>Commit the updated indexes & push to <span class="mono">gh-pages</span></li>
+    <section>
+      <h2>The Ledger</h2>
+      <p>
+        All transactions are public JSON files in the
+        <code>transactions</code> branch. The Explorer provides indexes
+        (<code>balances.json</code>, <code>txmeta.json</code>) for quick lookups.
+      </p>
+      <p>
+        Every transaction is validated automatically via GitHub Actions. 
+        The <code>from</code> field must match the GitHub user who opened the PR. 
+        This ensures identities are tied to GitHub accounts.
+      </p>
+    </section>
+
+    <section>
+      <h2>Get Started</h2>
+      <ol>
+        <li>⭐ Star the <a href="https://github.com/gitmoni-crypto/gitmoni" target="_blank">GitMoni repo</a>.</li>
+        <li>Wait for the faucet workflow (~10 min) to create your MONI grant.</li>
+        <li>Check your balance in the <a href="explorer.html">Explorer</a>.</li>
+        <li>Submit new transfers via <a href="submit.html">Submit Transaction</a>.</li>
       </ol>
-    </div>
-
-    <footer class="muted">© GitMoni — static wallet & explorer</footer>
+    </section>
   </main>
+
+  <footer>
+    <p>
+      Built with ❤️ on GitHub Pages. 
+      Source: <a href="https://github.com/gitmoni-crypto/gitmoni">gitmoni-crypto/gitmoni</a>
+    </p>
+  </footer>
 </body>
 </html>
