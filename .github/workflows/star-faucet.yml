@@ -1,0 +1,187 @@
+name: Star Faucet (every 10m)
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  faucet:
+    runs-on: ubuntu-latest
+    env:
+      OWNER: gitmoni-crypto
+      REPO:  gitmoni
+      TX_BRANCH: transactions
+      FAUCET_ADDR: gh:system
+      # Set your G1 (grant for rank 1). Example below uses 1,618,033,989:
+      G1: "1618033989"
+    steps:
+      - name: Checkout transactions
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ env.TX_BRANCH }}
+          path: tx
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run faucet
+        id: run
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          cd tx
+          mkdir -p data/txs
+
+          node - <<'JS'
+          import fs from 'fs';
+          import path from 'path';
+
+          const OWNER = process.env.OWNER;
+          const REPO  = process.env.REPO;
+          const G1    = BigInt(process.env.G1 || "1618033989");
+          const FAUCET = process.env.FAUCET_ADDR || "gh:system";
+
+          // ---- helpers
+          async function gh(url, opts={}) {
+            const r = await fetch(url, {
+              headers: {
+                'Authorization': `Bearer ${process.env.GH_TOKEN}`,
+                'Accept': 'application/vnd.github+json'
+              },
+              ...opts
+            });
+            if (!r.ok) throw new Error(`${r.status} ${url}`);
+            return r.json();
+          }
+
+          // Stargazers with timestamps require a special accept header per-page.
+          // We’ll page the "starred_at" feed manually.
+          async function listStargazersChrono() {
+            const out = [];
+            let url = `https://api.github.com/repos/${OWNER}/${REPO}/stargazers?per_page=100&page=1`;
+            while (url) {
+              const r = await fetch(url, {
+                headers: {
+                  'Authorization': `Bearer ${process.env.GH_TOKEN}`,
+                  'Accept': 'application/vnd.github.star+json'
+                }
+              });
+              if (!r.ok) throw new Error(`${r.status} ${url}`);
+              const data = await r.json();
+              for (const s of data) {
+                // s = { user:{login}, starred_at }
+                out.push({ login: s.user.login, starred_at: s.starred_at });
+              }
+              // pagination
+              const link = r.headers.get('link');
+              if (link && /rel="next"/.test(link)) {
+                const m = link.match(/<([^>]+)>;\s*rel="next"/);
+                url = m ? m[1] : null;
+              } else {
+                url = null;
+              }
+            }
+            // Older GitHub returns in ascending already, but enforce sort by time
+            out.sort((a,b)=> new Date(a.starred_at) - new Date(b.starred_at));
+            return out;
+          }
+
+          // Scan existing txs to see who is already paid (by memo and faucet sender)
+          function loadPaidAndFaucetNonce() {
+            const txDir = 'data/txs';
+            const files = fs.existsSync(txDir) ? fs.readdirSync(txDir).filter(f=>f.endsWith('.json')) : [];
+            const paid = new Set();
+            let faucetNonce = 0n;
+
+            for (const f of files.sort()) {
+              const t = JSON.parse(fs.readFileSync(path.join(txDir, f),'utf8'));
+              if (!t || !t.from || !t.to || typeof t.amount === 'undefined') continue;
+              // Count faucet outgoing to compute its next nonce:
+              if (t.from === FAUCET) faucetNonce++;
+              // If this was a faucet star grant, mark recipient as paid:
+              if (t.from === FAUCET && typeof t.memo === 'string' && t.memo.startsWith('star:rank=')) {
+                // to is "gh:username"
+                paid.add(t.to);
+              }
+            }
+            return { paid, faucetNonce: Number(faucetNonce) };
+          }
+
+          // 1/n grant
+          function grantForRank(rank) {
+            // return floor(G1 / rank)
+            return (G1 / BigInt(rank));
+          }
+
+          // Build tx object & filename
+          function buildTx({from, to, amount, nonce, rank}) {
+            const ts = Date.now();
+            const iso = new Date(ts).toISOString().replace(/\.\d{3}Z/,'Z');
+            const txid = `${iso}-${from}->${to}-${amount}`;
+            return {
+              tx: { txid, from, to, amount: Number(amount), nonce, ts, memo: `star:rank=${rank}` },
+              file: `data/txs/${iso.replace(/[-:]/g,'')}-${from.replace(':','_')}-to-${to.replace(':','_')}-${amount}.json`
+            };
+          }
+
+          const { paid, faucetNonce } = loadPaidAndFaucetNonce();
+          const stars = await listStargazersChrono();
+
+          // compute unpaid list with ranks
+          const unpaid = [];
+          for (let i=0;i<stars.length;i++) {
+            const login = stars[i].login;
+            const addr = `gh:${login}`;
+            if (!paid.has(addr)) {
+              const rank = i+1; // 1-based
+              const amt = grantForRank(rank);
+              if (amt > 0n) unpaid.push({ login, addr, rank, amt });
+            }
+          }
+
+          if (!unpaid.length) {
+            console.log('No new stargazers to pay.');
+            process.exit(0);
+          }
+
+          // Create tx files for all unpaid (in order), increment faucet nonce
+          let nonce = faucetNonce;
+          let created = 0;
+          for (const u of unpaid) {
+            nonce += 1;
+            const { tx, file } = buildTx({
+              from: FAUCET, to: u.addr, amount: u.amt, nonce, rank: u.rank
+            });
+            fs.writeFileSync(file, JSON.stringify(tx, null, 2));
+            console.log(`Created ${file} -> ${tx.to} rank=${u.rank} amount=${tx.amount} nonce=${nonce}`);
+            created++;
+          }
+
+          console.log(`CREATED=${created}`);
+          JS
+
+          # Capture whether files were created
+          CREATED=$(grep -oE '^CREATED=[0-9]+' -m1 <<< "$(tail -n 5 ./node_stdout 2>/dev/null || true)" | cut -d= -f2 || true)
+          # Fallback: count staged files
+          CREATED="$(git ls-files -o --exclude-standard data/txs/*.json | wc -l | tr -d ' ')"
+
+          if [ "$CREATED" = "0" ]; then
+            echo "No new tx files; exiting."
+            exit 0
+          fi
+
+      - name: Commit & push to transactions
+        run: |
+          cd tx
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/txs/*.json
+          git commit -m "Faucet: star grants (scheduled)"
+          git push origin HEAD:${{ env.TX_BRANCH }}

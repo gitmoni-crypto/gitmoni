@@ -3,6 +3,12 @@
 This branch is for **code, scripts, and experiments**.  
 It is **not** the canonical ledger (that’s `transactions`) and it is **not** the deployed site (that’s `gh-pages`).
 
+### How to receive your free MONI
+1) Star ⭐ this repo.
+2) Every ~10 minutes, the faucet gives new stargazers a one-time grant:
+   amount = floor(G1 / rank) where rank is your star order.
+3) Check your balance on the Explorer (address = gh:YOUR_USERNAME).
+
 ---
 
 ## Branch roles in this repo
@@ -48,3 +54,5 @@ It is **not** the canonical ledger (that’s `transactions`) and it is **not** t
 - Think of `main`/`develop` as the **workbench**.  
 - The real ledger lives in `transactions`.  
 - The live explorer is served from `gh-pages`.  
+
+
