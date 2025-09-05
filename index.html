@@ -1,25 +1,41 @@
 <!DOCTYPE html>
-<html><head><meta charset="utf-8"><title>GitMoni Wallet</title><link rel="stylesheet" href="styles.css"></head>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Security-Policy"
+      content="default-src 'self';
+               script-src 'self' https://cdnjs.cloudflare.com;
+               style-src 'self' 'unsafe-inline';
+               img-src 'self' data:;
+               object-src 'none';
+               base-uri 'self';
+               frame-ancestors 'none'">
+    <title>GitMoni Wallet</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
 <body>
-<h1>GitMoni Wallet</h1>
-<section><h2>Key Generator</h2><button onclick="generateKeys()">Generate Keys</button><pre id="key-output"></pre></section>
-<section><h2>Sign a Transaction</h2>
-<form onsubmit="signTransaction(event)">
-<label>To: <input type="text" id="to" required></label><br>
-<label>Amount: <input type="number" id="amount" required></label><br>
-<button type="submit">Sign Transaction</button>
-</form>
-<h3>Signed Transaction</h3><pre id="signed-output"></pre></section>
-<!-- 1) Load elliptic UMD first -->
-<script src="https://cdnjs.cloudflare.com/ajax/libs/elliptic/6.5.4/elliptic.min.js"
-        crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <h1>GitMoni Wallet</h1>
+    <section>
+        <h2>Key Generator</h2><button onclick="generateKeys()">Generate Keys</button>
+        <pre id="key-output"></pre>
+    </section>
+    <section>
+        <h2>Sign a Transaction</h2>
+        <form onsubmit="signTransaction(event)">
+            <label>To: <input type="text" id="to" required></label><br>
+            <label>Amount: <input type="number" id="amount" required></label><br>
+            <button type="submit">Sign Transaction</button>
+        </form>
+        <h3>Signed Transaction</h3>
+        <pre id="signed-output"></pre>
+    </section>
 
-<!-- 2) (Optional) your utils if you actually use it -->
-<!-- <script src="utils/crypto.js?v=1"></script> -->
-
-<!-- 3) Then your keygen script — NOTE: no type="module" -->
-<script src="keys/keygen.js?v=7"></script>
+    <script src="/js/elliptic.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="keys/keygen.js?v=10"></script>
 
 
+</body>
 
-</body></html>
+</html>
