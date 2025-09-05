@@ -1,4 +1,12 @@
 node_modules/
 .DS_Store
-package-lock.json
-package.json
+# ignore site
+explorer.html
+index.html
+submit.html
+styles.css
+js/
+utils/
+data/index/
+data/balances.json
+data/txmeta.json
