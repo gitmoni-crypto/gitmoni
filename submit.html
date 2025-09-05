@@ -1,40 +1,188 @@
-<!DOCTYPE html>
-<html><head><meta charset="utf-8"><title>Submit Transaction</title><link rel="stylesheet" href="styles.css"></head>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>GitMoni — Submit Transaction</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root { --bg:#0b0f14; --fg:#e6edf3; --muted:#9aa6b2; --card:#0e1621; --accent:#4aa3ff; }
+    *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--fg);font:15px/1.5 ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto}
+    header{padding:20px 16px;border-bottom:1px solid #13202e;display:flex;gap:10px;align-items:center}
+    h1{font-size:18px;margin:0} .muted{color:var(--muted)}
+    main{max-width:900px;margin:28px auto;padding:0 16px 40px}
+    .card{background:var(--card);border:1px solid #13202e;border-radius:12px;padding:18px;margin-bottom:14px}
+    .row{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+    input, button, select{background:#0a1320;color:var(--fg);border:1px solid #192a3a;border-radius:10px;padding:10px;font-family:ui-monospace,Menlo,Consolas}
+    input[type=number]{width:140px}
+    button{cursor:pointer;background:#0f2744;border-color:#203a51}
+    button:hover{background:#123051}
+    .button{display:inline-block;padding:10px 14px;border-radius:10px;border:1px solid #203a51;background:#0f2744;color:var(--fg);text-decoration:none}
+    .button:hover{background:#123051}
+    .pill{display:inline-block;padding:2px 8px;border:1px solid #203a51;border-radius:999px;background:#0a2036;margin-right:6px}
+    .mono{font-family:ui-monospace,Menlo,Consolas,monospace}
+    .small{font-size:12px;color:var(--muted)}
+    .good{color:#88d498} .bad{color:#ff7b7b}
+    textarea{width:100%;min-height:180px;background:#0a1320;color:var(--fg);border:1px solid #192a3a;border-radius:10px;padding:10px;font-family:ui-monospace}
+    .right{margin-left:auto}
+  </style>
+</head>
 <body>
-<h1>Submit Signed Transaction to GitMoni</h1>
-<p>Paste your full signed transaction JSON below:</p>
-<textarea id="tx" rows="10" cols="80" placeholder='{"from":"...", "to":"...", "amount":123, "pubkey":"...", "sig":"..."}'></textarea><br>
-<input type="text" id="txid" placeholder="Optional: tx-id filename (default is timestamp)"><br><br>
-<button onclick="generatePR()">Create GitHub PR Link</button>
-<p>🔗 <a id="pr-link" href="#" target="_blank"></a></p>
+  <header>
+    <h1>GitMoni Submit</h1>
+    <span class="muted">Build a TX JSON tied to your GitHub account — no keys needed</span>
+    <div class="right">
+      <a class="button" href="./index.html">🏠 Home</a>
+      <a class="button" href="./explorer.html">🔎 Explorer</a>
+    </div>
+  </header>
 
-<script>
-  const GH_OWNER  = 'gitmoni-crypto';
-  const GH_REPO   = 'gitmoni';
-  const GH_BRANCH = 'master';
+  <main>
+    <div class="card">
+      <h2 style="margin:0 0 8px">1) Who’s sending?</h2>
+      <div class="row">
+        <input id="fromUser" placeholder="your GitHub username (e.g. bryansaltzman)" />
+        <button id="checkFrom">Check balance & next nonce</button>
+        <span id="fromInfo" class="pill">balance: —</span>
+        <span id="fromNonce" class="pill">next nonce: —</span>
+      </div>
+      <div class="small" style="margin-top:6px">
+        We use the <span class="mono">gh:</span> prefix internally (e.g., <span class="mono">gh:alice</span>) to namespace identities.
+        <!-- If you want to drop the prefix entirely, see the commented line in the script. -->
+      </div>
+    </div>
 
+    <div class="card">
+      <h2 style="margin:0 0 8px">2) Who’s receiving?</h2>
+      <div class="row">
+        <input id="toUser" placeholder="recipient GitHub username" />
+        <input id="amount" type="number" min="1" step="1" placeholder="amount" />
+      </div>
+    </div>
 
-  function generatePR() {
-    const tx = document.getElementById('tx').value.trim();
-    if (!tx) return alert('Please paste a signed transaction first.');
+    <div class="card">
+      <h2 style="margin:0 0 8px">3) Build transaction</h2>
+      <div class="row">
+        <input id="nonce" type="number" min="0" step="1" placeholder="nonce (auto-filled)" />
+        <input id="memo" placeholder="memo (optional)" style="flex:1;min-width:260px" />
+        <button id="build">Build JSON</button>
+        <button id="download" disabled>💾 Download</button>
+      </div>
+      <div class="small" style="margin-top:8px">
+        Filename tip: <span class="mono">YYYYMMDDThhmmssZ-gh:FROM-&gt;gh:TO-AMOUNT.json</span>
+      </div>
+    </div>
 
-    const id   = document.getElementById('txid').value.trim() || Date.now();
-    const file = `data/pending/tx-${id}.json`;
+    <div class="card">
+      <h2 style="margin:0 0 8px">Output</h2>
+      <textarea id="out" readonly placeholder="Your transaction JSON will appear here…"></textarea>
+      <div class="small" style="margin-top:8px">
+        Next step: add this file in your fork under <span class="mono">data/txs/</span> and open a PR to <span class="mono">transactions</span>.
+      </div>
+    </div>
+  </main>
 
-    // optional: basic JSON sanity check before sending user to GitHub
-    try { JSON.parse(tx); } catch (e) {
-      return alert('Invalid JSON. Fix and try again.');
+  <script type="module">
+    // ---------- helpers ----------
+    const $ = (s)=>document.querySelector(s);
+    const ghAddr = (u)=> `gh:${u.trim()}`;        // CHANGE to (u)=>u.trim() to drop the "gh:" prefix entirely
+    const fmt = (n)=> (n??0).toLocaleString(undefined,{maximumFractionDigits:8});
+    async function j(url){ const r=await fetch(url,{cache:'no-store'}); if(!r.ok) throw new Error(url); return r.json(); }
+
+    // ---------- load indexes ----------
+    let INDEX = { txidToFile:{}, addressToTxids:{} };
+    let BAL = {};
+    try { INDEX = await j('data/index.json'); } catch {}
+    try { BAL   = await j('data/balances.json'); } catch {}
+
+    async function fetchTx(txid){
+      const loc = INDEX.txidToFile?.[txid];
+      if (loc && !loc.includes('#')) {
+        return j(loc).catch(()=>null);
+      }
+      // fallback: standard path
+      return j(`data/txs/${txid}.json`).catch(()=>null);
     }
 
-    // Create “new file” link on the main branch; GitHub will guide user to make a PR
-    const base = `https://github.com/${GH_OWNER}/${GH_REPO}/new/${GH_BRANCH}`;
-    const url  = `${base}?filename=${encodeURIComponent(file)}&value=${encodeURIComponent(tx)}&message=${encodeURIComponent('Add pending tx: '+file)}`;
+    async function nextNonceFor(user){
+      const addr = ghAddr(user);
+      const txids = INDEX.addressToTxids?.[addr] || [];
+      if (!txids.length) return 0;
+      // Count outgoing by fetching txs and checking .from
+      let count = 0;
+      // Small batches to avoid hammering
+      for (const id of txids){
+        const tx = await fetchTx(id);
+        if (tx?.from === addr) count++;
+      }
+      return count;
+    }
 
-    const link = document.getElementById('pr-link');
-    link.href = url;
-    link.textContent = "Open GitHub to submit transaction";
-  }
-</script>
+    // ---------- UI wiring ----------
+    const el = {
+      from: $('#fromUser'),
+      to:   $('#toUser'),
+      amt:  $('#amount'),
+      checkFrom: $('#checkFrom'),
+      fromInfo:  $('#fromInfo'),
+      fromNonce: $('#fromNonce'),
+      nonce: $('#nonce'),
+      memo:  $('#memo'),
+      build: $('#build'),
+      dl:    $('#download'),
+      out:   $('#out'),
+    };
 
+    el.checkFrom.addEventListener('click', async ()=>{
+      const u = el.from.value.trim();
+      if (!u) return;
+      const addr = ghAddr(u);
+      const bal = BAL[addr] ?? 0;
+      el.fromInfo.textContent = `balance: ${fmt(bal)}`;
+      el.fromInfo.className = 'pill';
+      try {
+        const n = await nextNonceFor(u);
+        el.nonce.value = n;
+        el.fromNonce.textContent = `next nonce: ${n}`;
+        el.fromNonce.className = 'pill';
+      } catch (e) {
+        el.fromNonce.textContent = 'next nonce: error';
+        el.fromNonce.className = 'pill bad';
+      }
+    });
 
-</body></html>
+    el.build.addEventListener('click', ()=>{
+      const fromU = el.from.value.trim();
+      const toU   = el.to.value.trim();
+      const amount= Number(el.amt.value);
+      const nonce = Number(el.nonce.value);
+      if (!fromU || !toU || !(amount>0) || !(nonce>=0)) {
+        alert('Fill sender, recipient, amount (>0), and nonce.');
+        return;
+      }
+      const from = ghAddr(fromU);
+      const to   = ghAddr(toU);
+
+      const ts = Date.now();
+      const iso = new Date(ts).toISOString().replace(/\.\d{3}Z/,'Z');
+      const txid = `${iso}-${from}->${to}-${amount}`;
+
+      const tx = { txid, from, to, amount, nonce, ts };
+      const memo = el.memo.value.trim();
+      if (memo) tx.memo = memo;
+
+      const pretty = JSON.stringify(tx, null, 2);
+      el.out.value = pretty;
+      el.dl.disabled = false;
+      el.dl.onclick = ()=>{
+        const name = `${iso.replace(/[-:]/g,'').replace('T','T')}-${from}->${to}-${amount}.json`;
+        const blob = new Blob([pretty], {type:'application/json'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = name;
+        a.click();
+        URL.revokeObjectURL(a.href);
+      };
+    });
+  </script>
+</body>
+</html>
