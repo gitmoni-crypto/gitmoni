@@ -1,0 +1,9 @@
+{
+  "txid": "2025-09-05T05:42:55Z-gh:system->gh:gitmoni-crypto-1618033989",
+  "from": "gh:system",
+  "to": "gh:gitmoni-crypto",
+  "amount": 1618033989,
+  "nonce": 1,
+  "ts": 1757050975467,
+  "memo": "star:rank=1"
+}
