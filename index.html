@@ -2,39 +2,74 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>GitMoni Explorer</title>
-  <link rel="stylesheet" href="index.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>GitMoni</title>
+  <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <div class="container">
-    <h1>💸 GitMoni</h1>
-    <p><strong>GitMoni</strong> is a simple social currency system built on top of GitHub commits. Users earn and send <code>moni</code> based on transaction JSONs stored in a GitHub repo.</p>
+  <header>
+    <h1>🌐 GitMoni</h1>
+    <p>A crypto-inspired experiment built entirely on GitHub.</p>
+  </header>
 
-    <h2>🔍 Explorer</h2>
-    <p>Use the links below to explore balances, transactions, and faucet utilities:</p>
+  <nav>
+    <a class="btn" href="explorer.html">Explorer</a>
+    <a class="btn" href="submit.html">Submit Transaction</a>
+    <a class="btn" href="https://github.com/gitmoni-crypto/gitmoni" target="_blank">GitHub Repo</a>
+  </nav>
 
-    <ul class="button-list">
-      <li><a class="button" href="./balances.json" target="_blank">💰 View Balances</a></li>
-      <li><a class="button" href="./data/index.json" target="_blank">📜 View Transaction Index</a></li>
-      <li><a class="button" href="https://github.com/gitmoni-crypto/gitmoni" target="_blank">📁 GitHub Repo</a></li>
-    </ul>
+  <main>
+    <section>
+      <h2>What is MONI?</h2>
+      <p>
+        MONI is a community currency distributed through GitHub stars ⭐.
+        Starring the GitMoni repo earns a one-time faucet grant of MONI, with
+        earlier stargazers receiving more.
+      </p>
+    </section>
 
-    <h2>🚰 Faucet</h2>
-    <p>The GitMoni faucet is seeded with <code>moni</code> and can reward users based on GitHub activity, rank, or manual claims. A sample faucet transaction:</p>
+    <section>
+      <h2>How distribution works</h2>
+      <ul>
+        <li>The <strong>first stargazer</strong> receives exactly <code>1_618_033_989</code> MONI (the golden ratio × 1 billion).</li>
+        <li>The <strong>n-th stargazer</strong> receives <code>1_618_033_989 / n</code>.</li>
+        <li>This harmonic decay rewards early adopters while naturally capping total supply.</li>
+        <li>MONI is not a real cryptocurrency — it's an experiment in social distribution and transparent tracking on GitHub.</li>
+      </ul>
+    </section>
 
-    <pre><code>{
-  "txid": "2025-09-05T05:42:55Z-gh:system->gh:gitmoni-crypto-1618033989",
-  "from": "gh:system",
-  "to": "gh:gitmoni-crypto",
-  "amount": 1618033989,
-  "nonce": 1,
-  "ts": 1757050975467,
-  "memo": "star:rank=1"
-}</code></pre>
+    <section>
+      <h2>The Ledger</h2>
+      <p>
+        Every MONI transaction is stored as a JSON file in the
+        <code>transactions</code> branch of the GitHub repo.
+      </p>
+      <p>
+        GitHub Actions validate each pull request. The sender (<code>from</code>)
+        must match the GitHub user who submitted it. This links identity and wallet.
+      </p>
+      <p>
+        The Explorer builds indexes like <code>balances.json</code> and
+        <code>txmeta.json</code> for fast lookups.
+      </p>
+    </section>
 
-    <h2>🌱 Philosophy</h2>
-    <p>GitMoni encourages open source contributions by letting users tip, earn, and exchange a mock currency via Git. All balances and history are public, trackable, and verified through commit hashes.</p>
-  </div>
+    <section>
+      <h2>Get Started</h2>
+      <ol>
+        <li>⭐ Star the <a href="https://github.com/gitmoni-crypto/gitmoni" target="_blank">GitMoni repo</a>.</li>
+        <li>Wait a few minutes for the faucet to detect your star and mint your grant.</li>
+        <li>Check your balance in the <a href="explorer.html">Explorer</a>.</li>
+        <li>Send a transaction by submitting a PR to the repo or using <a href="submit.html">Submit Transaction</a>.</li>
+      </ol>
+    </section>
+  </main>
+
+  <footer>
+    <p>
+      Built with ❤️ on GitHub Pages.  
+      Source: <a href="https://github.com/gitmoni-crypto/gitmoni">gitmoni-crypto/gitmoni</a>
+    </p>
+  </footer>
 </body>
 </html>
