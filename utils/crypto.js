@@ -1,1 +1,0 @@
-async function sha256HexBrowser(message){const enc=new TextEncoder().encode(message);const digest=await crypto.subtle.digest('SHA-256',enc);return Array.from(new Uint8Array(digest)).map(b=>b.toString(16).padStart(2,'0')).join('');} if(typeof window!=='undefined'){window.sha256HexBrowser=sha256HexBrowser;}
