@@ -1,0 +1,86 @@
+name: Publish indexes to gh-pages (scheduled)
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'   # every 10 minutes (UTC)
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-indexes
+  cancel-in-progress: true
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1) Get latest transactions branch
+      - name: Checkout transactions
+        uses: actions/checkout@v4
+        with:
+          ref: transactions
+          path: tx
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # 2) Build indexes from transactions -> tx/data/*
+      - name: Build indexes
+        working-directory: tx
+        run: |
+          # If your utils live in this branch/repo:
+          node utils/build-index.js || true
+          node utils/build-index-by-date.js || true
+
+      # 3) Prepare an output dir with *only* what we publish
+      - name: Stage publish artifacts
+        run: |
+          mkdir -p out
+          rsync -a --delete \
+            tx/data/ out/data/
+
+      # 4) Fetch current gh-pages to diff against its /data
+      - name: Checkout gh-pages (for diff only)
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: gh
+
+      - name: Detect changes
+        id: diff
+        shell: bash
+        run: |
+          set -e
+          # If gh/data doesn't exist yet, we definitely have changes
+          if [ ! -d "gh/data" ]; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # Dry-run rsync to see if anything would change
+          rsync -a --delete --dry-run out/data/ gh/data/ > rsync.diff || true
+          if [ -s rsync.diff ]; then
+            echo "changed=true" >> $GITHUB_OUTPUT
+          else
+            echo "changed=false" >> $GITHUB_OUTPUT
+          fi
+          echo "::group::Diff preview"
+          cat rsync.diff || true
+          echo "::endgroup::"
+
+      # 5) Deploy ONLY when something actually changed
+      - name: Deploy /data to gh-pages
+        if: steps.diff.outputs.changed == 'true'
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          branch: gh-pages
+          folder: out/data
+          target-folder: data
+          clean: false
+          single-commit: false
+          commit-message: "Update indexes (scheduled) @ ${{ github.run_id }}"
