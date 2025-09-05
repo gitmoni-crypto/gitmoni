@@ -1,14 +1,314 @@
-<!DOCTYPE html>
-<html><head><meta charset="utf-8"><title>GitMoni Explorer</title><link rel="stylesheet" href="styles.css"></head>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>GitMoni Explorer</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root { --bg:#0b0f14; --fg:#e6edf3; --muted:#9aa6b2; --card:#0e1621; --accent:#4aa3ff; --ok:#36c; --bad:#c33; }
+    * { box-sizing: border-box; }
+    body { margin:0; font:14px/1.4 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu; background:var(--bg); color:var(--fg); }
+    header { padding:18px 16px; border-bottom:1px solid #13202e; display:flex; gap:12px; align-items:center; }
+    h1 { font-size:16px; margin:0 8px 0 0; }
+    .muted { color:var(--muted); }
+    main { max-width:1100px; margin:20px auto; padding:0 16px 32px; }
+    .grid { display:grid; gap:12px; grid-template-columns: repeat(12, 1fr); }
+    .card { background:var(--card); border:1px solid #13202e; border-radius:10px; padding:12px; }
+    .span-12 { grid-column: span 12; }
+    .span-6 { grid-column: span 6; }
+    .span-4 { grid-column: span 4; }
+    .row { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+    input, select, button { background:#0a1320; color:var(--fg); border:1px solid #192a3a; border-radius:8px; padding:8px 10px; }
+    button { cursor:pointer; background:#0f2744; border-color:#203a51; }
+    button:hover { background:#123051; }
+    a { color:var(--accent); text-decoration:none; }
+    table { width:100%; border-collapse:collapse; }
+    th, td { padding:8px; text-align:left; border-bottom:1px solid #13202e; }
+    th { font-weight:600; font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.03em; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .pill { display:inline-block; padding:2px 8px; border-radius:999px; background:#0a2036; border:1px solid #203a51; font-size:12px; }
+    .right { text-align:right; }
+    .small { font-size:12px; color:var(--muted); }
+    .warn { color:#ffb86b; }
+    .good { color:#88d498; }
+    .bad { color:#ff7b7b; }
+    .hide { display:none; }
+    .flex { display:flex; gap:8px; align-items:center; flex-wrap:wrap; }
+  </style>
+</head>
 <body>
-<h1>GitMoni Verified Balances</h1>
-<pre id="balances"></pre>
-<h2>Merkle Tree</h2><div id="merkle-tree" style="font-family: monospace; white-space: pre-wrap;"></div>
-<script>
-async function sha256(s){const e=new TextEncoder().encode(s);const h=await crypto.subtle.digest('SHA-256',e);return Array.from(new Uint8Array(h)).map(b=>b.toString(16).padStart(2,'0')).join('');}
-async function verifyProof(leaf,proof,root){let hash=leaf;for(const step of proof){hash=step.direction==='left'?await sha256(step.hash+hash):await sha256(hash+step.hash);}return hash===root;}
-async function updateBalances(){const balances=await fetch('data/balances.json').then(r=>r.json());const txs=await fetch('data/txs.json').then(r=>r.json());const proofs=await fetch('data/proofs.json').then(r=>r.json());const merkleRoot=(await fetch('merkle-root.txt').then(r=>r.text())).trim();for(let i=0;i<txs.length;i++){const tx=txs[i];const leaf=await sha256(JSON.stringify(tx));const proof=proofs[i]||[];if(await verifyProof(leaf,proof,merkleRoot)){balances[tx.from]=(balances[tx.from]||0)-tx.amount;balances[tx.to]=(balances[tx.to]||0)+tx.amount;}}document.getElementById('balances').textContent=JSON.stringify(balances,null,2);}
-async function renderMerkleTree(){const txs=await fetch('data/txs.json').then(r=>r.json());const hashes=await Promise.all(txs.map(tx=>sha256(JSON.stringify(tx))));const levels=[hashes];while(levels[0].length>1){const prev=levels[0];const next=[];for(let i=0;i<prev.length;i+=2){const left=prev[i];const right=prev[i+1]||left;next.push(await sha256(left+right));}levels.unshift(next);}const treeDiv=document.getElementById('merkle-tree');treeDiv.innerHTML='';levels.forEach((level,i)=>{treeDiv.innerHTML+=`Level ${i} [${level.length} nodes]:\n`+level.map(h=>h.slice(0,16)+'…').join('   ')+'\n\n';});}
-updateBalances();renderMerkleTree();
-</script>
-</body></html>
+  <header>
+    <h1>GitMoni Explorer</h1>
+    <span class="muted">Browse balances & transactions</span>
+  </header>
+
+  <main>
+    <section class="grid">
+      <div class="card span-12">
+        <div class="flex">
+          <strong>Quick Tips:</strong>
+          <span class="small">TX data files: <code class="mono">data/txs/&lt;txid&gt;.json</code></span>
+          <span class="small">Indexes: <code class="mono">data/index.json</code>, <code class="mono">data/balances.json</code></span>
+          <span class="small">Date shards (optional): <code class="mono">data/index/by-date/YYYY-MM-DD.json</code></span>
+        </div>
+      </div>
+
+      <!-- Lookups -->
+      <div class="card span-6">
+        <h3>Lookup by TXID</h3>
+        <div class="row">
+          <input id="txid" class="mono" placeholder="txid…" size="46" />
+          <button id="btnTx">Open</button>
+        </div>
+        <div id="txOne" class="small muted" style="margin-top:8px;"></div>
+      </div>
+
+      <div class="card span-6">
+        <h3>Lookup by Address</h3>
+        <div class="row">
+          <input id="addr" class="mono" placeholder="address…" size="46" />
+          <button id="btnAddr">Show</button>
+          <span id="addrBal" class="pill">balance: —</span>
+        </div>
+      </div>
+
+      <!-- Date browsing -->
+      <div class="card span-12">
+        <h3>Browse by Date</h3>
+        <div class="row" style="margin-bottom:8px;">
+          <input id="dateFrom" type="date" />
+          <input id="dateTo" type="date" />
+          <button id="btnDate">Load Range</button>
+          <span class="muted small">or</span>
+          <select id="latestDays">
+            <option value="0">Latest…</option>
+            <option value="1">Latest 1 day</option>
+            <option value="3">Latest 3 days</option>
+            <option value="7">Latest 7 days</option>
+            <option value="14">Latest 14 days</option>
+            <option value="30">Latest 30 days</option>
+          </select>
+        </div>
+        <div id="dateHint" class="small muted"></div>
+      </div>
+
+      <!-- Results -->
+      <div class="card span-12">
+        <div id="summary" class="row" style="margin-bottom:8px;"></div>
+        <div class="hide" id="tblWrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Time (UTC)</th>
+                <th>TXID</th>
+                <th class="right">In</th>
+                <th class="right">Out</th>
+              </tr>
+            </thead>
+            <tbody id="tbody"></tbody>
+          </table>
+        </div>
+        <div id="empty" class="small muted">No results yet.</div>
+      </div>
+    </section>
+  </main>
+
+  <script type="module">
+    // ---------- helpers ----------
+    const $ = s => document.querySelector(s);
+    const fmtTime = ts => {
+      if (!ts) return '—';
+      const d = new Date(Number(ts));
+      return isNaN(d.getTime()) ? String(ts) : d.toISOString().replace('T',' ').slice(0,19) + ' UTC';
+    };
+    const fmtAmt = n => (n ?? 0).toLocaleString(undefined, {maximumFractionDigits:8});
+
+    async function safeFetchJSON(url) {
+      const r = await fetch(url, { cache: 'no-store' });
+      if (!r.ok) throw new Error(url + ' ' + r.status);
+      return r.json();
+    }
+
+    // ---------- load core indexes ----------
+    let INDEX = null;       // { txidToFile, addressToTxids }
+    let BALANCES = null;    // { address: number }
+    let TXMETA = null;      // [{txid,ts,in,out}]
+    let DATES = null;       // { dates:[{date,count,file}], ... } if present
+
+    async function boot() {
+      try {
+        [INDEX, BALANCES] = await Promise.all([
+          safeFetchJSON('data/index.json'),
+          safeFetchJSON('data/balances.json'),
+        ]);
+      } catch(e) {
+        console.warn('index.json/balances.json not found yet?', e);
+        INDEX = INDEX || { txidToFile:{}, addressToTxids:{} };
+        BALANCES = BALANCES || {};
+      }
+      try {
+        TXMETA = await safeFetchJSON('data/txmeta.json');
+      } catch(e) {
+        TXMETA = [];
+      }
+      try {
+        DATES = await safeFetchJSON('data/index/dates.json');
+        $('#dateHint').textContent = `Date shards detected: ${DATES.dates.length} day files`;
+      } catch(e) {
+        $('#dateHint').innerHTML = `<span class="warn">No date shards found.</span> Falling back to full txmeta (if available).`;
+        DATES = null;
+      }
+      bind();
+    }
+
+    // ---------- fetch utilities ----------
+    async function fetchTxById(txid) {
+      const loc = INDEX.txidToFile?.[txid];
+      if (loc && !loc.includes('#')) {
+        return safeFetchJSON(loc);
+      }
+      // fallback: if we only have txmeta, try to open standard file path
+      try { return await safeFetchJSON(`data/txs/${txid}.json`); }
+      catch { return null; }
+    }
+
+    async function txidsForAddress(addr) {
+      return INDEX.addressToTxids?.[addr] || [];
+    }
+
+    async function loadDateShard(file) {
+      // file like data/index/by-date/2025-09-04.json
+      return safeFetchJSON(file);
+    }
+
+    function filterTxmetaByDate(from, to) {
+      const f = from ? new Date(from + 'T00:00:00Z').getTime() : -Infinity;
+      const t = to   ? new Date(to   + 'T23:59:59Z').getTime() : Infinity;
+      return (TXMETA || []).filter(x => {
+        const ts = Number(x.ts||0);
+        return ts >= f && ts <= t;
+      });
+    }
+
+    // ---------- render ----------
+    function renderRows(rows) {
+      const tbody = $('#tbody');
+      tbody.innerHTML = rows.map(r => `
+        <tr>
+          <td class="small">${fmtTime(r.ts)}</td>
+          <td class="mono"><a href="#" data-txid="${r.txid}" class="txlink">${r.txid}</a></td>
+          <td class="right ${r.in>0?'bad':''}">${fmtAmt(r.in)}</td>
+          <td class="right ${r.out>0?'good':''}">${fmtAmt(r.out)}</td>
+        </tr>
+      `).join('');
+      $('#tblWrap').classList.toggle('hide', rows.length===0);
+      $('#empty').classList.toggle('hide', rows.length!==0);
+    }
+
+    function renderSummary(label, rows) {
+      const totalIn  = rows.reduce((s,x)=>s+(Number(x.in)||0),0);
+      const totalOut = rows.reduce((s,x)=>s+(Number(x.out)||0),0);
+      $('#summary').innerHTML = `
+        <span class="pill">${label}</span>
+        <span class="pill">count: ${rows.length}</span>
+        <span class="pill">in: ${fmtAmt(totalIn)}</span>
+        <span class="pill">out: ${fmtAmt(totalOut)}</span>
+      `;
+    }
+
+    // ---------- UI ----------
+    function bind() {
+      // TXID
+      $('#btnTx').addEventListener('click', async () => {
+        const id = $('#txid').value.trim();
+        if (!id) return;
+        const tx = await fetchTxById(id);
+        $('#txOne').innerHTML = tx
+          ? `<span class="good">Found.</span> <a class="mono" href="data/txs/${id}.json" target="_blank" rel="noopener">open file</a>`
+          : `<span class="bad">Not found.</span>`;
+      });
+
+      // Address
+      $('#btnAddr').addEventListener('click', async () => {
+        const a = $('#addr').value.trim();
+        if (!a) return;
+        const txids = await txidsForAddress(a);
+        const meta = (TXMETA || []).filter(x => txids.includes(x.txid));
+        $('#addrBal').textContent = `balance: ${fmtAmt(BALANCES?.[a] || 0)}`;
+        renderSummary(`address: ${a}`, meta);
+        renderRows(meta);
+      });
+
+      // Date range (prefer shards)
+      $('#btnDate').addEventListener('click', async () => {
+        const from = $('#dateFrom').value;
+        const to   = $('#dateTo').value || from;
+        if (!from) return;
+
+        if (DATES?.dates?.length) {
+          const want = DATES.dates.filter(d => d.date >= from && d.date <= to);
+          let rows = [];
+          for (const d of want) {
+            const bucket = await loadDateShard(d.file);
+            rows = rows.concat(bucket.txmeta || []);
+          }
+          rows.sort((a,b)=>Number(a.ts||0)-Number(b.ts||0));
+          renderSummary(`${from} .. ${to}`, rows);
+          renderRows(rows);
+        } else {
+          // fallback via full txmeta
+          const rows = filterTxmetaByDate(from, to);
+          renderSummary(`${from} .. ${to}`, rows);
+          renderRows(rows);
+        }
+      });
+
+      // Latest N days (if shards present)
+      $('#latestDays').addEventListener('change', async (e) => {
+        const n = Number(e.target.value);
+        if (!n) return;
+        if (!DATES?.dates?.length) {
+          $('#dateHint').innerHTML = `<span class="warn">Latest requires date shards.</span>`;
+          return;
+        }
+        const last = DATES.dates.slice(-n);
+        let rows = [];
+        for (const d of last) {
+          const bucket = await loadDateShard(d.file);
+          rows = rows.concat(bucket.txmeta || []);
+        }
+        rows.sort((a,b)=>Number(a.ts||0)-Number(b.ts||0));
+        const label = `latest ${n} day${n>1?'s':''}`;
+        renderSummary(label, rows);
+        renderRows(rows);
+      });
+
+      // Delegate TX link clicks (open inline row detail)
+      document.addEventListener('click', async (e) => {
+        const a = e.target.closest('a.txlink');
+        if (!a) return;
+        e.preventDefault();
+        const id = a.dataset.txid;
+        const tx = await fetchTxById(id);
+        if (!tx) return alert('TX not found');
+        const pretty = document.createElement('pre');
+        pretty.className = 'small mono';
+        pretty.textContent = JSON.stringify(tx, null, 2);
+        // toggle display
+        const tr = a.closest('tr');
+        const next = tr.nextElementSibling;
+        if (next && next.classList.contains('txdetail')) { next.remove(); return; }
+        const row = document.createElement('tr');
+        row.className = 'txdetail';
+        const cell = document.createElement('td');
+        cell.colSpan = 4;
+        cell.appendChild(pretty);
+        row.appendChild(cell);
+        tr.insertAdjacentElement('afterend', row);
+      });
+    }
+
+    boot();
+  </script>
+</body>
+</html>
