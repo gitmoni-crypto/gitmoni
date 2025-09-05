@@ -2,73 +2,39 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>GitMoni</title>
-  <link rel="stylesheet" href="styles.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>GitMoni Explorer</title>
+  <link rel="stylesheet" href="index.css" />
 </head>
 <body>
-  <header>
-    <h1>🌐 GitMoni</h1>
-    <p>A crypto-inspired experiment built entirely on GitHub.</p>
-  </header>
+  <div class="container">
+    <h1>💸 GitMoni</h1>
+    <p><strong>GitMoni</strong> is a simple social currency system built on top of GitHub commits. Users earn and send <code>moni</code> based on transaction JSONs stored in a GitHub repo.</p>
 
-  <nav>
-    <a class="btn" href="explorer.html">Explorer</a>
-    <a class="btn" href="submit.html">Submit Transaction</a>
-    <a class="btn" href="https://github.com/gitmoni-crypto/gitmoni" target="_blank">GitHub Repo</a>
-  </nav>
+    <h2>🔍 Explorer</h2>
+    <p>Use the links below to explore balances, transactions, and faucet utilities:</p>
 
-  <main>
-    <section>
-      <h2>What is MONI?</h2>
-      <p>
-        MONI is a community currency distributed through GitHub stars ⭐. 
-        Each GitHub account can star the repository once, and receives a 
-        one-time faucet grant of MONI.
-      </p>
-    </section>
+    <ul class="button-list">
+      <li><a class="button" href="./balances.json" target="_blank">💰 View Balances</a></li>
+      <li><a class="button" href="./data/index.json" target="_blank">📜 View Transaction Index</a></li>
+      <li><a class="button" href="https://github.com/gitmoni-crypto/gitmoni" target="_blank">📁 GitHub Repo</a></li>
+    </ul>
 
-    <section>
-      <h2>How distribution works</h2>
-      <ul>
-        <li>The <strong>1st stargazer</strong> receives ~1.6 billion MONI.</li>
-        <li>The <strong>n-th stargazer</strong> receives <code>g1 / n</code>, so
-          #10 gets 1/10th of the first grant, #100 gets 1/100th, and so on.</li>
-        <li>This “harmonic decay” rewards early adopters while capping total free supply at ~40 billion MONI even if billions of accounts starred.</li>
-        <li>After the faucet grant, users can only earn MONI by receiving transfers in the ledger.</li>
-      </ul>
-    </section>
+    <h2>🚰 Faucet</h2>
+    <p>The GitMoni faucet is seeded with <code>moni</code> and can reward users based on GitHub activity, rank, or manual claims. A sample faucet transaction:</p>
 
-    <section>
-      <h2>The Ledger</h2>
-      <p>
-        All transactions are public JSON files in the
-        <code>transactions</code> branch. The Explorer provides indexes
-        (<code>balances.json</code>, <code>txmeta.json</code>) for quick lookups.
-      </p>
-      <p>
-        Every transaction is validated automatically via GitHub Actions. 
-        The <code>from</code> field must match the GitHub user who opened the PR. 
-        This ensures identities are tied to GitHub accounts.
-      </p>
-    </section>
+    <pre><code>{
+  "txid": "2025-09-05T05:42:55Z-gh:system->gh:gitmoni-crypto-1618033989",
+  "from": "gh:system",
+  "to": "gh:gitmoni-crypto",
+  "amount": 1618033989,
+  "nonce": 1,
+  "ts": 1757050975467,
+  "memo": "star:rank=1"
+}</code></pre>
 
-    <section>
-      <h2>Get Started</h2>
-      <ol>
-        <li>⭐ Star the <a href="https://github.com/gitmoni-crypto/gitmoni" target="_blank">GitMoni repo</a>.</li>
-        <li>Wait for the faucet workflow (~10 min) to create your MONI grant.</li>
-        <li>Check your balance in the <a href="explorer.html">Explorer</a>.</li>
-        <li>Submit new transfers via <a href="submit.html">Submit Transaction</a>.</li>
-      </ol>
-    </section>
-  </main>
-
-  <footer>
-    <p>
-      Built with ❤️ on GitHub Pages. 
-      Source: <a href="https://github.com/gitmoni-crypto/gitmoni">gitmoni-crypto/gitmoni</a>
-    </p>
-  </footer>
+    <h2>🌱 Philosophy</h2>
+    <p>GitMoni encourages open source contributions by letting users tip, earn, and exchange a mock currency via Git. All balances and history are public, trackable, and verified through commit hashes.</p>
+  </div>
 </body>
 </html>
