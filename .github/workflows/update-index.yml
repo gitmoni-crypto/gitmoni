@@ -1,0 +1,36 @@
+# .github/workflows/update-index.yml
+name: Update Index on Transaction Push
+
+on:
+  push:
+    branches:
+      - transactions
+
+jobs:
+  update-index:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: transactions
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install & Run Index Builder
+        run: |
+          npm ci
+          node scripts/build-index.js  # This generates index/txs.json etc.
+
+      - name: Push to gh-pages/index
+        run: |
+          git config user.name "gitmoni-bot"
+          git config user.email "bot@gitmoni.com"
+          git checkout gh-pages
+          cp -r index/ index/
+          git add index/
+          git commit -m "Update index from transactions"
+          git push https://x-access-token:${{ secrets.PUSH_TOKEN }}@github.com/gitmoni-crypto/gitmoni.git gh-pages
