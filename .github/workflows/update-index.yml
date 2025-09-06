@@ -22,7 +22,7 @@ jobs:
 
       - name: Install & Run Index Builder
         run: |
-          npm ci
+          npm install
           node scripts/build-index.js  # This generates index/txs.json etc.
 
       - name: Push to gh-pages/index
