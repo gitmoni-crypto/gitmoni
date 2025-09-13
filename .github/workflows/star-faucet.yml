@@ -109,18 +109,26 @@ jobs:
             return { tx, file };
           }
 
+          // LOGGING: Start main logic
+          console.log('--- Faucet Workflow: Logging Stargazer and Payment Info ---');
+
           const { paid, faucetNonce } = loadPaidAndFaucetNonce();
+          console.log(`Already paid addresses (${paid.size}):`, Array.from(paid));
           const stars = await listStargazersChrono();
+          console.log(`Fetched ${stars.length} stargazers:`, stars.map(s => s.login));
 
           // Determine unpaid stargazers with their rank (1-based by time)
           const unpaid = [];
           for (let i = 0; i < stars.length; i++) {
             const login = stars[i].login;                    // already lowercased
             const addr  = `gh:${login}`;
-            if (paid.has(addr)) continue;                    // idempotent
+            if (paid.has(addr)) {
+              console.log(`Skipping ${login} (already paid)`);
+              continue; // idempotent
+            }
             const rank  = i + 1;
             const amt   = grantForRank(rank);
-            if (amt > 0n) unpaid.push({ addr, rank, amt });
+            if (amt > 0n) unpaid.push({ addr, rank, amt, login });
           }
 
           if (unpaid.length === 0) {
@@ -135,7 +143,7 @@ jobs:
               from: FAUCET, to: u.addr, amount: u.amt, nonce, rank: u.rank
             });
             fs.writeFileSync(file, JSON.stringify(tx, null, 2));
-            console.log(`Created ${file} :: to=${tx.to} rank=${u.rank} amount=${tx.amount} nonce=${nonce}`);
+            console.log(`Created ${file} :: to=${tx.to} login=${u.login} rank=${u.rank} amount=${tx.amount} nonce=${nonce}`);
           }
           JS
 
