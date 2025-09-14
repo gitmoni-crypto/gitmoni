@@ -5,6 +5,9 @@ on:
     - cron: "*/10 * * * *"   # every 10 minutes (UTC)
   workflow_dispatch: {}
 
+permissions:
+  contents: read
+
 jobs:
   faucet:
     runs-on: ubuntu-latest
@@ -31,6 +34,8 @@ jobs:
           node-version: '20'
 
       - name: Build faucet txs for new stargazers
+        env:
+          STARGAZER_TOKEN: ${{ secrets.STARGAZER_TOKEN }}
         run: |
           set -euo pipefail
           cd tx
@@ -49,6 +54,11 @@ jobs:
               .map(s => s.trim().toLowerCase())
               .filter(Boolean)
           );
+          
+          console.log(`Exclude list: ${Array.from(EXCLUDE).join(', ')}`);
+          console.log(`GitHub token present: ${!!process.env.GITHUB_TOKEN}`);
+          console.log(`Stargazer token present: ${!!process.env.STARGAZER_TOKEN}`);
+          console.log(`Using token: ${process.env.STARGAZER_TOKEN ? 'STARGAZER_TOKEN' : 'GITHUB_TOKEN'}`);
 
           // --- GitHub fetch helpers (Node 20 has global fetch)
           async function listStargazersChrono() {
@@ -56,18 +66,36 @@ jobs:
             let page = 1;
             while (true) {
               const url = `https://api.github.com/repos/${OWNER}/${REPO}/stargazers?per_page=100&page=${page}`;
+              console.log(`Fetching page ${page}: ${url}`);
+              
               const r = await fetch(url, {
                 headers: {
-                  'Authorization': `Bearer ${process.env.GITHUB_TOKEN}`,
+                  'Authorization': `Bearer ${process.env.STARGAZER_TOKEN || process.env.GITHUB_TOKEN}`,
                   'Accept': 'application/vnd.github.star+json'
                 }
               });
-              if (!r.ok) break;
+              
+              console.log(`Response status: ${r.status} ${r.statusText}`);
+              
+              if (!r.ok) {
+                console.error(`Failed to fetch stargazers: ${r.status} ${r.statusText}`);
+                const errorText = await r.text();
+                console.error(`Error response: ${errorText}`);
+                break;
+              }
+              
               const data = await r.json();
+              console.log(`Received ${data.length} stargazers on page ${page}`);
+              
               if (!Array.isArray(data) || data.length === 0) break;
+              
               for (const s of data) {
                 const login = (s?.user?.login || '').toLowerCase();
-                if (!login || EXCLUDE.has(login)) continue; // skip owner/bots
+                console.log(`Processing stargazer: ${login} (excluded: ${EXCLUDE.has(login)})`);
+                if (!login || EXCLUDE.has(login)) {
+                  console.log(`Skipping ${login} - in exclude list or no login`);
+                  continue; // skip owner/bots
+                }
                 out.push({ login, starred_at: s.starred_at });
               }
               page++;
