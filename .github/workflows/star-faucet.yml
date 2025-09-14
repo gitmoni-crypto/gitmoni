@@ -42,6 +42,14 @@ jobs:
           mkdir -p data/txs
 
           node - <<'JS'
+          console.log('=== DEBUG: Script started ===');
+          console.log(`Environment check:`);
+          console.log(`- OWNER: ${process.env.OWNER}`);
+          console.log(`- REPO: ${process.env.REPO}`);
+          console.log(`- GITHUB_TOKEN present: ${!!process.env.GITHUB_TOKEN}`);
+          console.log(`- STARGAZER_TOKEN present: ${!!process.env.STARGAZER_TOKEN}`);
+          console.log('=== Starting imports ===');
+          
           import fs from 'fs';
           import path from 'path';
 
@@ -59,6 +67,29 @@ jobs:
           console.log(`GitHub token present: ${!!process.env.GITHUB_TOKEN}`);
           console.log(`Stargazer token present: ${!!process.env.STARGAZER_TOKEN}`);
           console.log(`Using token: ${process.env.STARGAZER_TOKEN ? 'STARGAZER_TOKEN' : 'GITHUB_TOKEN'}`);
+
+          // Test API access first
+          console.log('=== Testing API access ===');
+          const testUrl = `https://api.github.com/repos/${OWNER}/${REPO}`;
+          console.log(`Testing basic repo access: ${testUrl}`);
+          try {
+            const testResponse = await fetch(testUrl, {
+              headers: {
+                'Authorization': `Bearer ${process.env.STARGAZER_TOKEN || process.env.GITHUB_TOKEN}`,
+                'Accept': 'application/vnd.github+json'
+              }
+            });
+            console.log(`Test response: ${testResponse.status} ${testResponse.statusText}`);
+            if (testResponse.ok) {
+              const repoData = await testResponse.json();
+              console.log(`Repo name: ${repoData.name}, Stars: ${repoData.stargazers_count}`);
+            } else {
+              const errorText = await testResponse.text();
+              console.log(`Test error: ${errorText}`);
+            }
+          } catch (error) {
+            console.log(`Test fetch error: ${error.message}`);
+          }
 
           // --- GitHub fetch helpers (Node 20 has global fetch)
           async function listStargazersChrono() {
