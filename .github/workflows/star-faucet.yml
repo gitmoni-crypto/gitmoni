@@ -209,8 +209,24 @@ jobs:
       - name: Push to transactions (via PAT)
         run: |
           cd tx
-          git config user.name  "<your-gh-username>"
-          git config user.email "<your-gh-email>"
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          echo "=== Git status before commit ==="
+          git status
+          
           git add data/txs/*.json
+          
+          echo "=== Git status after add ==="
+          git status
+          
           git commit -m "Faucet: star grants (scheduled)" || exit 0
-          git push https://x-access-token:${{ secrets.PUSH_TOKEN }}@github.com/gitmoni-crypto/gitmoni.git HEAD:${{ env.TX_BRANCH }}
+          
+          echo "=== Git log (last commit) ==="
+          git log -1 --oneline
+          
+          echo "=== About to push to branch: ${{ env.TX_BRANCH }} ==="
+          echo "=== Push token length: ${#PUSH_TOKEN} characters ==="
+          
+          # Try the push with more verbose output
+          git push -v https://x-access-token:${{ secrets.PUSH_TOKEN }}@github.com/gitmoni-crypto/gitmoni.git HEAD:${{ env.TX_BRANCH }}
