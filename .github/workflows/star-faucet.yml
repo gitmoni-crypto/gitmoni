@@ -207,6 +207,8 @@ jobs:
           JS
 
       - name: Push to transactions (via PAT)
+        env:
+          STARGAZER_TOKEN: ${{ secrets.STARGAZER_TOKEN }}
         run: |
           cd tx
           git config user.name  "github-actions[bot]"
@@ -226,7 +228,7 @@ jobs:
           git log -1 --oneline
           
           echo "=== About to push to branch: ${{ env.TX_BRANCH }} ==="
-          echo "=== Push token length: ${#PUSH_TOKEN} characters ==="
+          echo "=== Stargazer token length: ${#STARGAZER_TOKEN} characters ==="
           
           # Try the push with more verbose output
-          git push -v https://x-access-token:${{ secrets.PUSH_TOKEN }}@github.com/gitmoni-crypto/gitmoni.git HEAD:${{ env.TX_BRANCH }}
+          git push -v https://x-access-token:${{ secrets.STARGAZER_TOKEN }}@github.com/gitmoni-crypto/gitmoni.git HEAD:${{ env.TX_BRANCH }}
