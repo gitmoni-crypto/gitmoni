@@ -42,16 +42,16 @@ jobs:
           mkdir -p data/txs
 
           node - <<'JS'
-          console.log('=== DEBUG: Script started ===');
+          import fs from 'fs';
+          import path from 'path';
+          
+          console.log('=== DEBUG: Script started (NEW VERSION v2) ===');
           console.log(`Environment check:`);
           console.log(`- OWNER: ${process.env.OWNER}`);
           console.log(`- REPO: ${process.env.REPO}`);
           console.log(`- GITHUB_TOKEN present: ${!!process.env.GITHUB_TOKEN}`);
           console.log(`- STARGAZER_TOKEN present: ${!!process.env.STARGAZER_TOKEN}`);
-          console.log('=== Starting imports ===');
-          
-          import fs from 'fs';
-          import path from 'path';
+          console.log('=== Starting main logic ===');
 
           const OWNER   = process.env.OWNER;
           const REPO    = process.env.REPO;
