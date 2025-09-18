@@ -1,0 +1,9 @@
+{
+  "txid": "2025-09-18T21:27:16Z-gh:system->gh:baberuth22-809016994",
+  "from": "gh:system",
+  "to": "gh:baberuth22",
+  "amount": 809016994,
+  "nonce": 2,
+  "ts": 1758230836478,
+  "memo": "star:rank=2"
+}
