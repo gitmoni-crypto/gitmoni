@@ -6,31 +6,71 @@ on:
     branches:
       - transactions
 
+permissions:
+  contents: write
+
 jobs:
   update-index:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout transactions branch
         uses: actions/checkout@v4
         with:
           ref: transactions
+          path: tx
+
+      - name: Checkout gh-pages branch  
+        uses: actions/checkout@v4
+        with:
+          ref: gh-pages
+          path: gh-pages
 
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: '20'
 
-      - name: Install & Run Index Builder
+      - name: Build indexes from transaction data
+        env:
+          STARGAZER_TOKEN: ${{ secrets.STARGAZER_TOKEN }}
         run: |
-          npm install
-          node scripts/build-index.js  # This generates index/txs.json etc.
+          cd tx
+          
+          # Check if we have any transaction files to process
+          if [ ! -d "data/txs" ] || [ -z "$(ls -A data/txs/*.json 2>/dev/null)" ]; then
+            echo "No transaction files found, skipping index update"
+            exit 0
+          fi
+          
+          # Build the indexes
+          node scripts/build-index.js
+          
+          echo "=== Generated index files ==="
+          ls -la index/
 
-      - name: Push to gh-pages/index
+      - name: Copy indexes to gh-pages
         run: |
-          git config user.name "gitmoni-bot"
-          git config user.email "bot@gitmoni.com"
-          git checkout gh-pages
-          cp -r index/ index/
-          git add index/
-          git commit -m "Update index from transactions"
-          git push https://x-access-token:${{ secrets.PUSH_TOKEN }}@github.com/gitmoni-crypto/gitmoni.git gh-pages
+          # Copy the generated index files to gh-pages
+          mkdir -p gh-pages/data
+          cp -r tx/index/ gh-pages/data/
+          
+          echo "=== Files copied to gh-pages ==="
+          ls -la gh-pages/data/
+
+      - name: Commit and push to gh-pages
+        env:
+          STARGAZER_TOKEN: ${{ secrets.STARGAZER_TOKEN }}
+        run: |
+          cd gh-pages
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          git add data/
+          
+          if git diff --staged --quiet; then
+            echo "No changes to commit"
+            exit 0
+          fi
+          
+          git commit -m "Update indexes from transactions branch"
+          git push https://x-access-token:${{ secrets.STARGAZER_TOKEN }}@github.com/gitmoni-crypto/gitmoni.git HEAD:gh-pages
