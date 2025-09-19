@@ -1,4 +1,6 @@
-# GitMoni — Development Branch
+# GitMoni — GitHub-Based Cryptocurrency
+
+**GitMoni** is a cryptocurrency built on GitHub where users earn tokens by starring the repository. It uses GitHub's infrastructure for trust, identity, and transaction storage.tMoni — Development Branch
 
 This branch is for **code, scripts, and experiments**.  
 It is **not** the canonical ledger (that’s `transactions`) and it is **not** the deployed site (that’s `gh-pages`).
@@ -11,48 +13,66 @@ It is **not** the canonical ledger (that’s `transactions`) and it is **not** t
 
 ---
 
-## Branch roles in this repo
-- `transactions` → append-only ledger of raw TX JSONs. Users submit PRs here.  
-- `gh-pages` → public explorer site + compiled indexes, published at https://gitmoni.com.  
-- `main` (or `develop`) → tooling, scripts, validators, experiments.
+## Repository structure
+- `transactions` → append-only ledger of raw transaction JSONs. The canonical blockchain.  
+- `gh-pages` → public explorer website + compiled indexes, published at https://gitmoni.com.  
+- `develop` → tooling, scripts, validators, and development work.
 
 ---
 
-## Typical contents
-- `utils/` → scripts for building indexes, balances, date shards.  
-- `validate-tx.js` → local validation logic.  
-- `merkle-tree.js` (optional) → demo of Merkle proofs.  
-- `package.json` → defines build scripts.  
-- README.md (this file).
+## Key components
+- `scripts/` → build tools for generating indexes and balances from transaction data.  
+- `validate-tx.js` → transaction validation logic.  
+- `.github/workflows/` → automated faucet and index publishing workflows.  
+- Transaction format: `{txid, from, to, amount, nonce, ts, memo}`
 
 ---
 
-## Common tasks
+## How it works
+
+### Automated Star Faucet
+- GitHub Actions workflow runs every 10 minutes
+- Detects new stargazers using GitHub API
+- Creates transactions with rank-based amounts (G1 = 1,618,033,989)
+- Pushes transactions to the `transactions` branch
+
+### Index Generation
+- Another workflow builds balances and transaction indexes
+- Publishes updated data to `gh-pages` for the website
+- Enables real-time balance checking and transaction history
+
+### Transaction Economics
+- **Rank 1**: 1,618,033,989 MONI (Golden ratio × 10^9)
+- **Rank 2**: 809,016,994 MONI (G1 ÷ 2)
+- **Rank 3**: 539,344,663 MONI (G1 ÷ 3)
+- And so on... earlier stars get exponentially more tokens
+
+---
+
+## Development
 
 ### Build indexes locally
-    npm install
-    npm run build:index    # build data/index.json, balances.json, txmeta.json
-    npm run build:dates    # build data/index/by-date/*.json and dates.json
+    node scripts/build-index.js
 
-### Validate a transaction locally
-    npm run validate
+### Manual faucet testing
+    node scripts/faucet-mock.js
 
-### Generate a Merkle tree (demo)
-    npm run merkle
+### View transaction curves
+    node scripts/rank-curve.js
 
 ---
 
 ## Contribution guidelines
-- Use this branch for **development work** (new scripts, features).  
-- Do **not** add transactions here — those belong in `transactions`.  
-- Do **not** commit site-only changes here — those belong in `gh-pages`.  
-- Keep code clean and documented so CI jobs can run without surprises.
+- Use the `develop` branch for **development work** (new scripts, features).  
+- Do **not** add transactions manually — those are created by the automated faucet.  
+- Submit improvements via pull requests to enhance the automation or website.
 
 ---
 
 ## Notes
-- Think of `main`/`develop` as the **workbench**.  
-- The real ledger lives in `transactions`.  
-- The live explorer is served from `gh-pages`.  
+- **Decentralized**: Uses GitHub's distributed infrastructure  
+- **Transparent**: All transactions visible in git history  
+- **Automated**: No manual intervention needed for token distribution  
+- **Fair**: Earlier supporters get more tokens, but everyone gets some  
 
 
