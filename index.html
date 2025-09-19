@@ -2,8 +2,21 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>GitMoni</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0    <section>
+      <h2>How It Works</h2>
+      <p>
+        GitMoni uses a <strong>multi-branch architecture</strong> for clean separation:
+      </p>
+      <ul>
+        <li><strong>master</strong> → Main branch with automation workflows and scripts</li>
+        <li><strong>transactions</strong> → Append-only blockchain ledger (JSON files)</li>
+        <li><strong>gh-pages</strong> → This website with real-time balance explorer</li>
+      </ul>
+      <p>
+        <strong>Automated workflows</strong> handle everything: star detection, token distribution, 
+        transaction validation, and website updates. <strong>No manual intervention needed!</strong>
+      </p>
+    </section>>GitMoni</title>
   <link rel="stylesheet" href="styles.css" />
   <style>
     body {
@@ -80,7 +93,7 @@
 <body>
   <header>
     <h1>🌐 GitMoni</h1>
-    <p>A crypto-inspired experiment built entirely on GitHub.</p>
+    <p>GitHub-based cryptocurrency where you earn tokens by starring the repository.</p>
   </header>
 
   <nav>
@@ -91,35 +104,48 @@
 
   <main>
     <section>
-      <h2>Check your balance</h2>
+      <h2>💰 Check Your Balance</h2>
       <p>Enter your GitHub username to see your MONI balance:</p>
       <input id="ghuser" class="mono" placeholder="your GitHub username" />
-      <button id="check" class="btn">Check</button>
+      <button id="check" class="btn">Check Balance</button>
       <div style="margin-top:10px;">
-        <span class="pill" id="addr">addr: —</span>
+        <span class="pill" id="addr">address: —</span>
         <span class="pill" id="bal">balance: —</span>
       </div>
-      <p style="margin-top:8px;">
-        Tip: your address is <code>gh:USERNAME</code>. Balances load from <code>data/balances.json</code>.
+      <p style="margin-top:8px; font-size: 0.9em; color: #8b949e;">
+        💡 Your address format: <code>gh:USERNAME</code> • Balances update automatically every 10 minutes
       </p>
     </section>
 
     <section>
-      <h2>What is MONI?</h2>
+      <h2>What is GitMoni?</h2>
       <p>
-        MONI is a community currency distributed through GitHub stars ⭐. 
-        Each GitHub account can star the repo once and receives a one-time faucet grant.
+        GitMoni is a cryptocurrency built on GitHub where users earn tokens by starring the repository. 
+        It uses GitHub's infrastructure for trust, identity, and transaction storage.
+        The system runs completely automated - just star the repo and receive your tokens!
       </p>
     </section>
 
     <section>
-      <h2>How distribution works</h2>
+      <h2>How to get MONI</h2>
+      <ol>
+        <li>⭐ <strong>Star the repo</strong> - that's it!</li>
+        <li><strong>Automated faucet</strong> runs every 10 minutes detecting new stargazers</li>
+        <li><strong>Receive tokens</strong> based on your star rank: amount = G1 ÷ rank</li>
+        <li><strong>Check your balance</strong> above or in the Explorer</li>
+      </ol>
+      <p><strong>Your address:</strong> <code>gh:YOUR_GITHUB_USERNAME</code></p>
+    </section>
+
+    <section>
+      <h2>Token Economics</h2>
       <ul>
-        <li>The <strong>1st stargazer</strong> receives ~1.6 billion MONI.</li>
-        <li>The <strong>n-th stargazer</strong> receives <code>g1 / n</code>.</li>
-        <li>Total free supply converges slowly (~40 billion MONI max).</li>
-        <li>After the faucet, you can only earn MONI via transfers.</li>
+        <li><strong>Rank 1:</strong> 1,618,033,989 MONI (Golden ratio × 10⁹)</li>
+        <li><strong>Rank 2:</strong> 809,016,994 MONI (G1 ÷ 2)</li>
+        <li><strong>Rank 3:</strong> 539,344,663 MONI (G1 ÷ 3)</li>
+        <li><strong>Rank n:</strong> G1 ÷ n MONI</li>
       </ul>
+      <p>Earlier supporters get exponentially more tokens, but everyone gets some!</p>
     </section>
 
     <section>
@@ -136,13 +162,26 @@
     </section>
 
     <section>
+      <h2>Key Features</h2>
+      <ul>
+        <li><strong>🤖 Fully Automated</strong> - Star faucet runs every 10 minutes</li>
+        <li><strong>🔍 Transparent</strong> - All transactions visible in git history</li>
+        <li><strong>🏗️ GitHub Native</strong> - Uses GitHub's infrastructure for everything</li>
+        <li><strong>⚡ Real-time</strong> - Website updates automatically with new transactions</li>
+        <li><strong>🛡️ Validated</strong> - All transactions checked for integrity</li>
+        <li><strong>🎯 Fair Distribution</strong> - Earlier supporters get more, but everyone gets some</li>
+      </ul>
+    </section>
+
+    <section>
       <h2>Get Started</h2>
       <ol>
-        <li>⭐ Star the <a href="https://github.com/gitmoni-crypto/gitmoni" target="_blank">GitMoni repo</a>.</li>
-        <li>Wait for the faucet (runs every 10 min) to grant your MONI.</li>
-        <li>Check your balance above or in the <a href="explorer.html">Explorer</a>.</li>
-        <li>Submit transfers with <a href="submit.html">Submit Transaction</a>.</li>
+        <li>⭐ <strong>Star</strong> the <a href="https://github.com/gitmoni-crypto/gitmoni" target="_blank">GitMoni repository</a></li>
+        <li>⏰ <strong>Wait</strong> for the next faucet run (every 10 minutes)</li>
+        <li>💰 <strong>Check</strong> your balance above or in the <a href="explorer.html">Explorer</a></li>
+        <li>💸 <strong>Transfer</strong> tokens using <a href="submit.html">Submit Transaction</a></li>
       </ol>
+      <p><em>That's it! The system handles everything automatically.</em></p>
     </section>
   </main>
 
@@ -173,12 +212,12 @@
     async function showBalance() {
       const user = $('#ghuser').value.trim();
       const addr = ghAddr(user);
-      $('#addr').textContent = `addr: ${addr || '—'}`;
+      $('#addr').textContent = `address: ${addr || '—'}`;
       if (!user) { $('#bal').textContent = 'balance: —'; return; }
 
       const bal = await loadBalances();
       const v = bal[addr] ?? 0;
-      $('#bal').textContent = `balance: ${fmt(v)}`;
+      $('#bal').textContent = `balance: ${fmt(v)} MONI`;
     }
 
     $('#check').addEventListener('click', showBalance);
