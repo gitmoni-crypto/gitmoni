@@ -33,9 +33,8 @@ jobs:
       - name: Build indexes
         working-directory: tx
         run: |
-          # If your utils live in this branch/repo:
-          node utils/build-index.js || true
-          node utils/build-index-by-date.js || true
+          # Use the working build script from scripts directory
+          node scripts/build-index.js
 
       # 3) Prepare an output dir with *only* what we publish
       - name: Stage publish artifacts
