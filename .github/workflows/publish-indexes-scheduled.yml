@@ -40,8 +40,13 @@ jobs:
       - name: Stage publish artifacts
         run: |
           mkdir -p out
-          rsync -a --delete \
-            tx/data/ out/data/
+          # Copy transaction data
+          rsync -a --delete tx/data/ out/data/
+          # Copy generated indexes
+          rsync -a --delete tx/index/ out/index/
+          
+          echo "=== Staged artifacts ==="
+          find out -type f -name "*.json" | head -10
 
       # 4) Fetch current gh-pages to diff against its /data
       - name: Checkout gh-pages (for diff only)
@@ -55,25 +60,36 @@ jobs:
         shell: bash
         run: |
           set -e
-          # If gh/data doesn't exist yet, we definitely have changes
-          if [ ! -d "gh/data" ]; then
+          # Check if gh has data or index directories, if not we definitely have changes
+          if [ ! -d "gh/data" ] && [ ! -d "gh/index" ]; then
             echo "changed=true" >> $GITHUB_OUTPUT
+            echo "No existing data or index directories found"
             exit 0
           fi
+          
+          # Create directories if they don't exist
+          mkdir -p gh/data gh/index
 
           # Dry-run rsync to see if anything would change
-          rsync -a --delete --dry-run out/data/ gh/data/ > rsync.diff || true
-          if [ -s rsync.diff ]; then
+          rsync -a --delete --dry-run out/data/ gh/data/ > rsync-data.diff || true
+          rsync -a --delete --dry-run out/index/ gh/index/ > rsync-index.diff || true
+          
+          if [ -s rsync-data.diff ] || [ -s rsync-index.diff ]; then
             echo "changed=true" >> $GITHUB_OUTPUT
           else
             echo "changed=false" >> $GITHUB_OUTPUT
           fi
-          echo "::group::Diff preview"
-          cat rsync.diff || true
+          
+          echo "::group::Data diff preview"
+          cat rsync-data.diff || true
+          echo "::endgroup::"
+          
+          echo "::group::Index diff preview"
+          cat rsync-index.diff || true
           echo "::endgroup::"
 
       # 5) Deploy ONLY when something actually changed
-      - name: Deploy /data to gh-pages (native git)
+      - name: Deploy data and indexes to gh-pages (native git)
         if: steps.diff.outputs.changed == 'true'
         env:
           STARGAZER_TOKEN: ${{ secrets.STARGAZER_TOKEN }}
@@ -82,18 +98,22 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           
-          echo "=== Copying new data to gh-pages ==="
+          echo "=== Copying new data and indexes to gh-pages ==="
           rsync -a --delete ../out/data/ data/
+          rsync -a --delete ../out/index/ index/
+          
+          echo "=== Files after sync ==="
+          find data index -name "*.json" | head -10
           
           echo "=== Git status before commit ==="
           git status
           
-          git add data/
+          git add data/ index/
           
           echo "=== Git status after add ==="
           git status
           
-          git commit -m "Update indexes (scheduled) @ ${{ github.run_id }}" || exit 0
+          git commit -m "Update data and indexes (scheduled) @ ${{ github.run_id }}" || exit 0
           
           echo "=== Git log (last commit) ==="
           git log -1 --oneline
