@@ -73,14 +73,30 @@ jobs:
           echo "::endgroup::"
 
       # 5) Deploy ONLY when something actually changed
-      - name: Deploy /data to gh-pages
+      - name: Deploy /data to gh-pages (native git)
         if: steps.diff.outputs.changed == 'true'
-        uses: JamesIves/github-pages-deploy-action@v4
-        with:
-          token: ${{ secrets.STARGAZER_TOKEN }}
-          branch: gh-pages
-          folder: out/data
-          target-folder: data
-          clean: false
-          single-commit: false
-          commit-message: "Update indexes (scheduled) @ ${{ github.run_id }}"
+        env:
+          STARGAZER_TOKEN: ${{ secrets.STARGAZER_TOKEN }}
+        run: |
+          cd gh
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          echo "=== Copying new data to gh-pages ==="
+          rsync -a --delete ../out/data/ data/
+          
+          echo "=== Git status before commit ==="
+          git status
+          
+          git add data/
+          
+          echo "=== Git status after add ==="
+          git status
+          
+          git commit -m "Update indexes (scheduled) @ ${{ github.run_id }}" || exit 0
+          
+          echo "=== Git log (last commit) ==="
+          git log -1 --oneline
+          
+          echo "=== About to push to gh-pages ==="
+          git push -v https://x-access-token:${{ secrets.STARGAZER_TOKEN }}@github.com/gitmoni-crypto/gitmoni.git HEAD:gh-pages
