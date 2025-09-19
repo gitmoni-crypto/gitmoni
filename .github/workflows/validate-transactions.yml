@@ -1,0 +1,64 @@
+name: Validate Transactions
+
+on:
+  push:
+    branches: [ transactions ]
+    paths: [ 'data/txs/*.json' ]
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      # 1) Checkout develop branch (where validation script lives)
+      - name: Checkout develop branch
+        uses: actions/checkout@v4
+        with:
+          ref: develop
+          path: develop
+
+      # 2) Checkout transactions branch (data to validate)
+      - name: Checkout transactions branch
+        uses: actions/checkout@v4
+        with:
+          ref: transactions
+          path: transactions
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # 3) Run validation using develop branch script on transactions data
+      - name: Validate transaction files
+        working-directory: develop
+        run: |
+          # Copy transaction data to expected location for validation
+          mkdir -p data
+          cp -r ../transactions/data/txs data/
+          
+          echo "=== Running GitMoni transaction validation ==="
+          echo "Validating $(find data/txs -name '*.json' | wc -l) transaction files"
+          
+          # Run the validation script
+          node scripts/validate-transactions.js
+          
+          echo "=== Validation complete ==="
+
+      # 4) Report results
+      - name: Validation summary
+        if: success()
+        run: |
+          echo "✅ All transactions passed validation!"
+          echo "🔗 Safe to proceed with index building and publishing"
+
+      - name: Validation failed
+        if: failure()
+        run: |
+          echo "❌ Transaction validation failed!"
+          echo "🚫 Check the logs above for validation errors"
+          echo "🔧 Fix the issues before proceeding"
+          exit 1
